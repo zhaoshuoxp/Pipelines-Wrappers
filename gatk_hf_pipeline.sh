@@ -1,7 +1,7 @@
 #!/bin/bash
 # set up reads
-reads1=READS1
-reads2=READS2
+reads1=$1
+reads2=$2
 picard=/home/quanyi/app/picard.jar
 gatk=/home/quanyi/app/GenomeAnalysisTK/GenomeAnalysisTK.jar
 #
