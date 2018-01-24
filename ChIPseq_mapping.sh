@@ -2,8 +2,9 @@
 #####################################
 # Usage:	$1=reads1/file/to/path	#
 #			$2=reads2/file/to/path	#
-#			$3=output_file_name		#
+#			$3=output_file_prefix	#
 #####################################
+
 
 # path to reads
 READS1=$1
@@ -24,8 +25,8 @@ cutadapt -f fastq -m 20 -a AGATCGGAAGAGC -A AGATCGGAAGAGC -g GCTCTTCCGATCT -G GC
 bwa mem -M -t 8 $bwaindex_hg19 $3_R1_trimmed.gz $3_R2_trimmed.gz > $3.sam 
 
 # samtools convert/sort
-samtools view -b -@ 6 -o $3.bam $3.sam 
-samtools sort -@ 6 -o $3_srt.bam $3.bam
+samtools view -b -@ 8 -o $3.bam $3.sam 
+samtools sort -@ 8 -o $3_srt.bam $3.bam
 
 # picard markduplicates
 java -jar $picard MarkDuplicates INPUT=$3_srt.bam OUTPUT=$3_mkdup.bam METRICS_FILE=./logs/$3_dup.log REMOVE_DUPLICATES=false
@@ -33,7 +34,8 @@ java -jar $picard MarkDuplicates INPUT=$3_srt.bam OUTPUT=$3_mkdup.bam METRICS_FI
 echo 'flagstat after mkdup:' >> ./logs/$3_align.log
 samtools flagstat $3_mkdup.bam >> ./logs/$3_align.log
 
-# remove unpaired/unmapped/duplicates/not primary alignments
+# remove unpaired/unmapped/duplicates/failedQC
+# Do NOT do filtering when Pooled ChIPseq!!!
 samtools index $3_mkdup.bam
 samtools view -f 2 -F 1804 -b -o $3_filtered.bam $3_mkdup.bam
 
@@ -43,7 +45,7 @@ samtools flagstat $3_filtered.bam >> ./logs/$3_align.log
 
 # BAM to BW 
 #create SE bed from bam
-bamToBed -i $3_filtered.bam -split > $3_se.bed
+bamToBed -i $3_mkdup.bam -split > $3_se.bed
 
 #create plus and minus strand bedgraph
 cat $3_se.bed | sort -k1,1 | bedItemOverlapCount hg19 -chromSize=$len_hg19 stdin | sort -k1,1 -k2,2n > $3.bedGraph
@@ -51,12 +53,12 @@ cat $3_se.bed | sort -k1,1 | bedItemOverlapCount hg19 -chromSize=$len_hg19 stdin
 bedGraphToBigWig $3.bedGraph $len_hg19 $3_bam.bw
 
 # BAM convert to BED_PE for macs2 peak calling
-samtools sort -n -@ 6 -o $3.bam2 $3_filtered.bam
+samtools sort -n -@ 8 -o $3.bam2 $3_filtered.bam
 bamToBed -bedpe -i $3.bam2 > $3.bed
 cut -f 1,2,6 $3.bed > $3_pe.bed
 
 # clean
-rm $3.bam $3.sam $3_R1_trimmed.gz $3_R2_trimmed.gz $3_srt.bam $3.bed $3.bedGraph $3.bam2
+rm $3.bam $3.sam $3_R1_trimmed.gz $3_R2_trimmed.gz $3_srt.bam $3.bed $3.bedGraph $3.bam2 $3_se.bed
 
 ################ END ################
 #          Created by Aone          #
