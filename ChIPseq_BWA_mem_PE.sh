@@ -11,8 +11,16 @@ READS1=$1
 READS2=$2
 NAME=$3
 picard=/home/quanyi/app/picard.jar
+
+if [ ! -d logs ]
+then 
 mkdir logs
+fi
+
+if [ ! -d fastqc ]
+then 
 mkdir fastqc
+fi 
 
 # fastqc control
 fastqc -f fastq -o fastqc $1 
@@ -38,6 +46,8 @@ samtools flagstat $3_mkdup.bam >> ./logs/$3_align.log
 # Do NOT do filtering when Pooled ChIPseq!!!
 samtools index $3_mkdup.bam
 samtools view -f 2 -F 1804 -b -o $3_filtered.bam $3_mkdup.bam
+#samtools view -f 2 -F 1536 -b -o $3_filtered.bam $3_mkdup.bam
+#samtools view -F 1536 -b -o $3_filtered.bam $3_mkdup.bam
 
 echo >> ./logs/$3_align.log
 echo 'flagstat after filter:' >> ./logs/$3_align.log
@@ -50,7 +60,7 @@ bamToBed -i $3_mkdup.bam -split > $3_se.bed
 #create plus and minus strand bedgraph
 cat $3_se.bed | sort -k1,1 | bedItemOverlapCount hg19 -chromSize=$len_hg19 stdin | sort -k1,1 -k2,2n > $3.bedGraph
 
-bedGraphToBigWig $3.bedGraph $len_hg19 $3_bam.bw
+bedGraphToBigWig $3.bedGraph $len_hg19 $3.bw
 
 # BAM convert to BED_PE for macs2 peak calling
 samtools sort -n -@ 8 -o $3.bam2 $3_filtered.bam
