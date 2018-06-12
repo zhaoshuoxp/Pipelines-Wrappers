@@ -5,14 +5,35 @@
 #			$3=output_prefix			#
 #####################################
 
+# check programs: 
+which cutadapt &>/dev/null || { echo "cutadapt not found!"; exit 1; }
+which bowtie2 &>/dev/null || { echo "bowtie2 not found!"; exit 1; }
+which fastqc &>/dev/null || { echo "fastqc not found!"; exit 1; }
+which samtools &>/dev/null || { echo "samtools not found!"; exit 1; }
+which bedtools &>/dev/null || { echo "bedtools not found!"; exit 1; }
+which macs2 &>/dev/null || { echo "macs2 not found!"; exit 1; }
+which bedGraphToBigWig &>/dev/null || { echo "bedGraphToBigWig not found!"; exit 1; }
+
 # path to reads
 READS1=$1
 READS2=$2
 NAME=$3
 picard=/home/quanyi/app/picard.jar
+
+if [ ! -d logs ]
+then 
 mkdir logs
+fi
+
+if [ ! -d fastqc ]
+then 
 mkdir fastqc
-mkdir macs2 
+fi 
+
+if [ ! -d macs2 ]
+then 
+mkdir macs2
+fi 
 
 # fastqc control
 fastqc -f fastq -o fastqc $1 

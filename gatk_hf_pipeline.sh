@@ -33,29 +33,26 @@ java -jar $gatk -T PrintReads -nct 8 -R $gatk_ref_hg19 -I realigned_reads.bam -B
 java -jar $gatk -T HaplotypeCaller -nct 24 -R $gatk_ref_hg19 -I recal_reads.bam --genotyping_mode DISCOVERY --emitRefConfidence GVCF -o raw_variants.g.vcf 
 
 # Genotype (VCF)
-java -jar $gatk -T GenotypeGVCFs -D $gatk_bundle_hg19/dbsnp_138.hg19.vcf -R $gatk_ref_hg19 --variant $sample1 --variant $sample2 -o raw_variants.vcf 
+java -jar $gatk -T GenotypeGVCFs -D $gatk_bundle_hg19/dbsnp_138.hg19.vcf -R $gatk_ref_hg19 --variant raw_variants.g.vcf -o raw_variants.vcf 
 
 # Hard filter
 # SNP filter
 java -jar $gatk -T SelectVariants -R $gatk_ref_hg19 -V raw_variants.vcf -selectType SNP -o raw_snps.vcf 
-java -jar $gatk -T VariantFiltration -R $gatk_ref_hg19 -V raw_snps.vcf --filterExpression "QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" --filterName "my_snp_filter" -o filtered_snps.vcf 
+java -jar $gatk -T VariantFiltration -R $gatk_ref_hg19 -V raw_snps.vcf --filterExpression "QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" --filterName "snp_filter" -o filtered_snps.vcf 
 
 # INDEL filter
 java -jar $gatk -T SelectVariants -R $gatk_ref_hg19 -V raw_variants.vcf -selectType INDEL -o raw_indels.vcf 
-java -jar $gatk -T VariantFiltration -R $gatk_ref_hg19 -V raw_indels.vcf --filterExpression "QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0" --filterName "my_indel_filter" -o filtered_indels.vcf
+java -jar $gatk -T VariantFiltration -R $gatk_ref_hg19 -V raw_indels.vcf --filterExpression "QD < 2.0 || FS > 200.0 || ReadPosRankSum < -20.0" --filterName "indel_filter" -o filtered_indels.vcf
 
 # Merge
 java -jar $gatk -T CombineVariants -R $gatk_ref_hg19 --variant filtered_snps.vcf --variant filtered_indels.vcf -o merged_snp_indel_filtered.vcf -genotypeMergeOptions UNIQUIFY
 
 # low genotype quality filter
-java -jar $gatk -T VariantFiltration -R $gatk_ref_hg19 -V merged_snp_indel_filtered.vcf -G_filter "GQ < 20.0" -G_filterName lowGQ -o merged_snp_indel_gq_filtered.vcf
+java -jar $gatk -T VariantFiltration -R $gatk_ref_hg19 -V merged_snp_indel_filtered.vcf -G_filter "GQ < 20.0" -G_filterName lowGQ -o merged_gq_filtered.vcf
 
 # de novo mutations filter
-java -jar $gatk -T VariantAnnotator -R $gatk_ref_hg19 -V merged_snp_indel_gq_filtered.vcf -A PossibleDeNovo -o merged_snp_indel_gq_denovo_filtered.vcf
+java -jar $gatk -T VariantAnnotator -R $gatk_ref_hg19 -V merged_gq_filtered.vcf -A PossibleDeNovo -o merged_gq_denovo_filtered.vcf
 
 # clean
-rm *.ba*-*
-samtools view -Sb -@ 16 aln.sam -o bwa_mem.bam
-samtools sort -l 9 -@ 16 bwa_mem.bam -o bwa_mem_srt.bam
-samtools rmdup bwa_mem_srt.bam bwa_mem_rmdup.bam
-rm bwa_mem.bam aln.sam
+mv dedup_reads.bam mkdup.bam
+rm aln.sam sorted_reads.bam ordered_reads.bam realigned_reads.bam recal_reads.bam

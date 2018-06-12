@@ -4,13 +4,18 @@
 #			$2=reads2/file/to/path	#
 #			$3=output_file_prefix	#
 #####################################
+# check programs: 
+which cutadapt &>/dev/null || { echo "cutadapt not found!"; exit 1; }
+which bowtie2 &>/dev/null || { echo "bowtie2 not found!"; exit 1; }
+which tophat2 &>/dev/null || { echo "tophat not found!"; exit 1; }
+which fastqc &>/dev/null || { echo "fastqc not found!"; exit 1; }
+which cufflinks &>/dev/null || { echo "cufflinks not found!"; exit 1; }
 
 # path to reads
 READS1=$1
 READS2=$2
 NAME=$3
-mkdir $3
-mkdir $3/fastqc
+mkdir -p $3/fastqc
 
 # fastqc control
 fastqc -f fastq -o $3/fastqc $1 

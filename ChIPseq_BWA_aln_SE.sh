@@ -1,10 +1,15 @@
 #!/bin/bash
 #####################################
 # Usage:	$1=reads1/file/to/path	#
-#			$2=reads2/file/to/path	#
 #			$2=output_file_prefix	#
 #####################################
-
+# check programs: 
+which cutadapt &>/dev/null || { echo "cutadapt not found!"; exit 1; }
+which bwa &>/dev/null || { echo "bwa not found!"; exit 1; }
+which fastqc &>/dev/null || { echo "fastqc not found!"; exit 1; }
+which samtools &>/dev/null || { echo "samtools not found!"; exit 1; }
+which bedtools &>/dev/null || { echo "bedtools not found!"; exit 1; }
+which bedGraphToBigWig &>/dev/null || { echo "bedGraphToBigWig not found!"; exit 1; }
 
 # path to reads
 READS1=$1

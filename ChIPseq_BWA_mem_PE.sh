@@ -4,7 +4,13 @@
 #			$2=reads2/file/to/path	#
 #			$3=output_file_prefix	#
 #####################################
-
+# check programs: 
+which cutadapt &>/dev/null || { echo "cutadapt not found!"; exit 1; }
+which bwa &>/dev/null || { echo "bwa not found!"; exit 1; }
+which fastqc &>/dev/null || { echo "fastqc not found!"; exit 1; }
+which samtools &>/dev/null || { echo "samtools not found!"; exit 1; }
+which bedtools &>/dev/null || { echo "bedtools not found!"; exit 1; }
+which bedGraphToBigWig &>/dev/null || { echo "bedGraphToBigWig not found!"; exit 1; }
 
 # path to reads
 READS1=$1
@@ -47,7 +53,6 @@ samtools flagstat $3_mkdup.bam >> ./logs/$3_align.log
 samtools index $3_mkdup.bam
 samtools view -f 2 -F 1804 -b -o $3_filtered.bam $3_mkdup.bam
 #samtools view -f 2 -F 1536 -b -o $3_filtered.bam $3_mkdup.bam
-#samtools view -F 1536 -b -o $3_filtered.bam $3_mkdup.bam
 
 echo >> ./logs/$3_align.log
 echo 'flagstat after filter:' >> ./logs/$3_align.log
