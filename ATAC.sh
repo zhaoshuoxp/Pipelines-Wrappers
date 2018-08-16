@@ -112,3 +112,7 @@ gzip *.bdg
 cd ..
 rm $3.sam $3.bam $3_srt.bam $3_chrM.bam $3_chrM.bam.bai $3_R1_trimmed.gz $3_R2_trimmed.gz $3_pe.bam $3_pe.bed $3.bedGraph
 
+################ END ################
+#          Created by Aone          #
+#     quanyi.zhao@stanford.edu      #
+################ END ################
