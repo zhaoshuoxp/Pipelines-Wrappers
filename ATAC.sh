@@ -13,12 +13,13 @@ which samtools &>/dev/null || { echo "samtools not found!"; exit 1; }
 which bedtools &>/dev/null || { echo "bedtools not found!"; exit 1; }
 which macs2 &>/dev/null || { echo "macs2 not found!"; exit 1; }
 which bedGraphToBigWig &>/dev/null || { echo "bedGraphToBigWig not found!"; exit 1; }
+which bedClip &>/dev/null || { echo "bedClip not found!"; exit 1; }
 
 # path to reads
 READS1=$1
 READS2=$2
 NAME=$3
-picard=/home/quanyi/app/picard.jar
+wget https://github.com/broadinstitute/picard/releases/download/2.18.12/picard.jar
 curl -s ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/chromInfo.txt.gz | gunzip -c > hg19_len
 
 if [ ! -d logs ]
@@ -55,7 +56,7 @@ samtools view -b -@ 6 $3.sam -o $3.bam
 samtools sort -@ 6 $3.bam -o $3_srt.bam
 
 # picard mark duplaicates
-java -jar $picard MarkDuplicates INPUT=$3_srt.bam OUTPUT=$3_mkdup.bam METRICS_FILE=./logs/$3_dup.log REMOVE_DUPLICATES=false
+java -jar picard.jar MarkDuplicates INPUT=$3_srt.bam OUTPUT=$3_mkdup.bam METRICS_FILE=./logs/$3_dup.log REMOVE_DUPLICATES=false
 
 echo >> ./logs/$3_align.log
 echo 'flagstat after markdup:' >> ./logs/$3_align.log
@@ -97,9 +98,8 @@ mv $3_treat_pileup.bdg $3_treat_pileup_SPMR.bdg
 mv $3_peaks.xls $3_broad.xls
 
 # convert bdg to bigwig file # see macs2 doc
-wget https://gist.githubusercontent.com/taoliu/2469050/raw/34476e91ebd3ba9d26345da88fd2a4e7b893deea/bdg2bw
-mv bdg2bw bedGraph2bigwig.sh
-chmod 755 ./bedGraph2bigwig.sh
+curl -s https://gist.githubusercontent.com/taoliu/2469050/raw/34476e91ebd3ba9d26345da88fd2a4e7b893deea/bdg2bw > bedGraph2bigwig.sh
+chmod 755 bedGraph2bigwig.sh
 ./bedGraph2bigwig.sh $3_treat_pileup_SPMR.bdg ../hg19_len
 rm bedGraph2bigwig.sh
 
@@ -109,9 +109,7 @@ macs2 callpeak -t ../$3_shift.bed -g hs -n $3 -f BEDPE -B --keep-dup all
 mv $3_peaks.xls $3_narrow.xls
 
 # Blacklist filtering
-wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz
-gunzip wgEncodeDacMapabilityConsensusExcludable.bed.gz
-mv wgEncodeDacMapabilityConsensusExcludable.bed bklt_hg19
+curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz | gunzip -c > bklt_hg19
 intersectBed -v -a $3_peaks.broadPeak -b bklt_hg19 > $3_broad_filtered.bed
 intersectBed -v -a $3_peaks.narrowPeak -b bklt_hg19 > $3_narrow_filtered.bed
 rm bklt_hg19
@@ -119,7 +117,7 @@ rm bklt_hg19
 # clean
 gzip *.bdg
 cd ..
-rm $3.sam $3.bam $3_srt.bam $3_chrM.bam $3_chrM.bam.bai $3_R1_trimmed.gz $3_R2_trimmed.gz $3_pe.bam $3_pe.bed $3.bedGraph
+rm $3.sam $3.bam $3_srt.bam $3_chrM.bam $3_chrM.bam.bai $3_R1_trimmed.gz $3_R2_trimmed.gz $3_pe.bam $3_pe.bed $3.bedGraph hg19_len picard.jar
 
 ################ END ################
 #          Created by Aone          #
