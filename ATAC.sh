@@ -19,6 +19,7 @@ READS1=$1
 READS2=$2
 NAME=$3
 picard=/home/quanyi/app/picard.jar
+curl -s ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/chromInfo.txt.gz | gunzip -c > hg19_len
 
 if [ ! -d logs ]
 then 
@@ -77,9 +78,9 @@ samtools flagstat $3_filtered.bam >> ./logs/$3_align.log
 bamToBed -i $3_filtered.bam -split > $3_se.bed
 
 #create plus and minus strand bedgraph
-cat $3_se.bed | sort -k1,1 | bedItemOverlapCount hg19 -chromSize=$len_hg19 stdin | sort -k1,1 -k2,2n > $3.bedGraph
+cat $3_se.bed | sort -k1,1 | bedItemOverlapCount hg19 -chromSize=hg19_len stdin | sort -k1,1 -k2,2n > $3.bedGraph
 
-bedGraphToBigWig $3.bedGraph $len_hg19 $3_bam.bw
+bedGraphToBigWig $3.bedGraph hg19_len $3_bam.bw
 
 # Tn5 shifting
 samtools sort -n -@ 6 -o $3_pe.bam $3_filtered.bam
@@ -96,7 +97,11 @@ mv $3_treat_pileup.bdg $3_treat_pileup_SPMR.bdg
 mv $3_peaks.xls $3_broad.xls
 
 # convert bdg to bigwig file # see macs2 doc
-bedGraph2bigwig.sh $3_treat_pileup_SPMR.bdg $len_hg19
+wget https://gist.githubusercontent.com/taoliu/2469050/raw/34476e91ebd3ba9d26345da88fd2a4e7b893deea/bdg2bw
+mv bdg2bw bedGraph2bigwig.sh
+chmod 755 ./bedGraph2bigwig.sh
+./bedGraph2bigwig.sh $3_treat_pileup_SPMR.bdg ../hg19_len
+rm bedGraph2bigwig.sh
 
 # macs2 call narrow peaks
 macs2 callpeak -t ../$3_shift.bed -g hs -n $3 -f BEDPE -B --keep-dup all
@@ -104,8 +109,12 @@ macs2 callpeak -t ../$3_shift.bed -g hs -n $3 -f BEDPE -B --keep-dup all
 mv $3_peaks.xls $3_narrow.xls
 
 # Blacklist filtering
-intersectBed -v -a $3_peaks.broadPeak -b $bklt_hg19 > $3_broad_filtered.bed
-intersectBed -v -a $3_peaks.narrowPeak -b $bklt_hg19 > $3_narrow_filtered.bed
+wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz
+gunzip wgEncodeDacMapabilityConsensusExcludable.bed.gz
+mv wgEncodeDacMapabilityConsensusExcludable.bed bklt_hg19
+intersectBed -v -a $3_peaks.broadPeak -b bklt_hg19 > $3_broad_filtered.bed
+intersectBed -v -a $3_peaks.narrowPeak -b bklt_hg19 > $3_narrow_filtered.bed
+rm bklt_hg19
 
 # clean
 gzip *.bdg

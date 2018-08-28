@@ -60,7 +60,7 @@ samtools flagstat $3_filtered.bam >> ./logs/$3_align.log
 
 # BAM to BW 
 #create SE bed from bam
-bamToBed -i $3_mkdup.bam -split > $3_se.bed
+bamToBed -i $3_filtered.bam -split > $3_se.bed
 
 #create plus and minus strand bedgraph
 cat $3_se.bed | sort -k1,1 | bedItemOverlapCount hg19 -chromSize=$len_hg19 stdin | sort -k1,1 -k2,2n > $3.bedGraph
