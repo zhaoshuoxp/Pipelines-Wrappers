@@ -1,22 +1,8 @@
 #!/bin/bash
-#download gwas catalog and create bed file with "chr position position+1 proxy_gene phenotype"
-#echo "
-##download gwas catalog 
-#awk -F\"\t\" '{if (\$12!=\"\") print \$12\"\t\"\$13\"\t\"\$15\"\t\"\$8}' /home/quanyi/SNP_dataset/gwascatalog.txt > tmp
-#awk -F\"\t\" '{print \$1\"\t\"\$2\"\t\"\$2+1\"\t\"\$3\"\t\"\$4}' tmp > GwasCatalog.bed
-#rm tmp" > GwasCatalog2Bed.sh
-#chmod 775 GwasCatalog2Bed.sh
-#./GwasCatalog2Bed.sh
-#rm GwasCatalog2Bed.sh
 
-#adding CardiogramPlusC4D to GWASCatalog
-#awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4"\t","CardiogramPlusC4D"}' /home/quanyi/SNP_dataset/CARDIoGRAMplusC4D/CARDIOGRAMplusC4DleadSNPs.bed  > CARDIOGRAMC4Dplusnovel.txt.tmp
-#sed -i 's/^chr//g' CARDIOGRAMC4Dplusnovel.txt.tmp
-#cat CARDIOGRAMC4Dplusnovel.txt.tmp >> GwasCatalog.bed
-#rm CARDIOGRAMC4Dplusnovel.txt.tmp
-
-# bugs above, some pos=NA appear, use below one
-awk -v OFS="\t" -F"\t" '{print $12,$13,$13+1,$15,$8}' /home/quanyi/SNP_dataset/gwascatalog.txt | awk -F"\t" '{if ($3!=1){print $0}}' > GwasCatalog.bed
+#get gwas plus CARDIoGRAMplusC4D SNPs in BED format
+#wget http://www.genome.gov/admin/gwascatalog.txt
+awk -v OFS="\t" -F"\t" '{print $12,$13,$13+1,$22,$8}' /home/quanyi/SNP_dataset/gwascatalog.txt | awk -F"\t" '{if ($3!=1){print $0}}' > GwasCatalog.bed
 awk -v OFS="\t" '{print $1,$2,$3,$4,"CardiogramPlusC4D"}' /home/quanyi/SNP_dataset/CARDIoGRAMplusC4D/CARDIOGRAMplusC4DleadSNPs.bed > CARDIOGRAMC4Dplusnovel.tmp
 sed -i 's/^chr//g' CARDIOGRAMC4Dplusnovel.tmp
 cat CARDIOGRAMC4Dplusnovel.tmp >> GwasCatalog.bed
@@ -140,8 +126,8 @@ sub_total=$(intersectBed -a GwasCatalog.bed1 -b "$last" |wc -l|cut -d" " -f1)
 
 #create  R script
 touch script.R
-echo "#!/usr/bin/Rscript" > script.R
-echo "existingDF <- as.data.frame(matrix(seq(4),nrow=1,ncol=4))" >>script.R
+echo "#!/usr/bin/env Rscript
+existingDF <- as.data.frame(matrix(seq(4),nrow=1,ncol=4))" >script.R
 #calculate coverage and fraction per category, load into R script
 i=1
 for var in "${@:1:$#-1}"
@@ -174,74 +160,74 @@ fold="$(awk 'BEGIN {print (("'"$overlap"'"/"'"$sub_total"'")/("'"$total"'"/"'"$a
 #fold="$(awk 'BEGIN {print (("'"$overlap"'"/"'"$selected"'")/("'"$total"'"/"'"$selected_total"'"))}')"
 echo $fold
 
-echo  "x<-dbinom ($(wc -l "$var".gwascatalog.bed.cut.sort.uniq.overlap | cut -f1 -d ' '), $(wc -l "$var".gwascatalog.bed | cut -f1 -d ' '), "$fra")" >> script.R
-echo "y<-"$fold"">> script.R
-echo "name<-\""$var2"\"">>script.R
-echo "s<-$(wc -l "$var".gwascatalog.bed | cut -f1 -d ' ')">>script.R
-echo "z<-c(name,x,y,s)">>script.R
-echo "existingDF <- rbind(existingDF,z)">>script.R
-echo "existingDF">>script.R
+echo  "x<-dbinom ($(wc -l "$var".gwascatalog.bed.cut.sort.uniq.overlap | cut -f1 -d ' '), $(wc -l "$var".gwascatalog.bed | cut -f1 -d ' '), "$fra")
+y<-"$fold"
+name<-\""$var2"\"
+s<-$(wc -l "$var".gwascatalog.bed | cut -f1 -d ' ')
+z<-c(name,x,y,s)
+existingDF <- rbind(existingDF,z)
+existingDF">>script.R
 done
 
 #finishing R script
 
-echo "existingDF<-existingDF[-1,]">>script.R
-echo "existingDF[,2:4]<-sapply(existingDF[,2:4], as.numeric)">>script.R
-echo "sapply(existingDF, mode)">>script.R
-echo "existingDF">>script.R
-echo "existingDF<-transform(existingDF, V2=-log(V2))" >> script.R
-echo "existingDF">>script.R
+echo "existingDF<-existingDF[-1,]
+existingDF[,2:4]<-sapply(existingDF[,2:4], as.numeric)
+sapply(existingDF, mode)
+existingDF
+existingDF<-transform(existingDF, V2=-log(V2))
+existingDF
 
-echo "data<-existingDF" >>script.R
-echo "data">>script.R
-echo "rownames(data) <- data\$V1" >>script.R
-echo "data<-data[,2:4]">>script.R
+data<-existingDF
+data
+rownames(data) <- data\$V1
+data<-data[,2:4]
 
 #adding categories
-echo "k<-dim (data)" >>script.R
-echo "rep <-rep(\"Other\", k[1])">>script.R
-echo "data\$V5 <- rep">>script.R
+k<-dim (data)
+rep <-rep(\"Other\", k[1])
+data\$V5 <- rep
 
-echo "data[rownames(data) == \"Schizophrenia\",]\$V5<-\"Brain\"">>script.R
-echo "data[rownames(data) == \"Bipolardisorder\",]\$V5<-\"Brain\"">>script.R
-echo "data[rownames(data) == \"Atherosclerosis\",]\$V5<-\"Cardiovascular\"">>script.R
-echo "data[rownames(data) == \"Ulcerativecolitis\",]\$V5<-\"Chronic Inflammatory\"">>script.R
-echo "data[rownames(data) == \"CardiogramplusC4D\",]\$V5<-\"Cardiovascular\"">>script.R
-echo "data[rownames(data) == \"CoronaryHeart\",]\$V5<-\"Cardiovascular\"">>script.R
-echo "data[rownames(data) == \"Myocardialinfarction\",]\$V5<-\"Cardiovascular\"">>script.R
-echo "data[rownames(data) == \"Multiplesclerosis\",]\$V5<-\"Brain\"">>script.R
-echo "data[rownames(data) == \"Parkinsonsdisease\",]\$V5<-\"Brain\"">>script.R
-echo "data[rownames(data) == \"Alzheimersdisease\",]\$V5<-\"Brain\"">>script.R
-echo "data[rownames(data) == \"Lupus\",]\$V5<-\"Chronic Inflammatory\"">>script.R
-echo "data[rownames(data) == \"Prostatecancer\",]\$V5<-\"Cancer\"">>script.R
-echo "data[rownames(data) == \"Pancreaticcancer\",]\$V5<-\"Cancer\"">>script.R
-echo "data[rownames(data) == \"Breastcancer\",]\$V5<-\"Cancer\"">>script.R
-echo "data[rownames(data) == \"CoronaryArtery\",]\$V5<-\"Cardiovascular\"">>script.R
-echo "data[rownames(data) == \"Coronaryarterycalcification\",]\$V5<-\"Cardiovascular\"">>script.R
+data[rownames(data) == \"Schizophrenia\",]\$V5<-\"Brain\"
+data[rownames(data) == \"Bipolardisorder\",]\$V5<-\"Brain\"
+data[rownames(data) == \"Atherosclerosis\",]\$V5<-\"Cardiovascular\"
+data[rownames(data) == \"Ulcerativecolitis\",]\$V5<-\"Chronic Inflammatory\"
+data[rownames(data) == \"CardiogramplusC4D\",]\$V5<-\"Cardiovascular\"
+data[rownames(data) == \"CoronaryHeart\",]\$V5<-\"Cardiovascular\"
+data[rownames(data) == \"Myocardialinfarction\",]\$V5<-\"Cardiovascular\"
+data[rownames(data) == \"Multiplesclerosis\",]\$V5<-\"Brain\"
+data[rownames(data) == \"Parkinsonsdisease\",]\$V5<-\"Brain\"
+data[rownames(data) == \"Alzheimersdisease\",]\$V5<-\"Brain\"
+data[rownames(data) == \"Lupus\",]\$V5<-\"Chronic Inflammatory\"
+data[rownames(data) == \"Prostatecancer\",]\$V5<-\"Cancer\"
+data[rownames(data) == \"Pancreaticcancer\",]\$V5<-\"Cancer\"
+data[rownames(data) == \"Breastcancer\",]\$V5<-\"Cancer\"
+data[rownames(data) == \"CoronaryArtery\",]\$V5<-\"Cardiovascular\"
+data[rownames(data) == \"Coronaryarterycalcification\",]\$V5<-\"Cardiovascular\"
 
 #removing 0s
-echo "data[, 1:3] <- sapply(data[,1:3], as.numeric)">>script.R
-echo "row_sub = apply(data[,1:3], 1, function(y) all(y != 0))">>script.R
-echo "row_sub">>script.R
-echo "data<-data[row_sub,]">>script.R
-echo "data">>script.R
-echo "data[, 1:3] <- sapply(data[,1:3], as.numeric)">>script.R
-echo "colnames(data)<-c(\"LogP\", \"FC\", \"Phenotype SNPs\", \"Category\")">>script.R
-echo "data">>script.R
+data[, 1:3] <- sapply(data[,1:3], as.numeric)
+row_sub = apply(data[,1:3], 1, function(y) all(y != 0))
+row_sub
+data<-data[row_sub,]
+data
+data[, 1:3] <- sapply(data[,1:3], as.numeric)
+colnames(data)<-c(\"LogP\", \"FC\", \"Phenotype SNPs\", \"Category\")
+data
 
 #making ggplot2 graph
-echo "library(ggplot2)" >> script.R
-echo "library(wesanderson)">>script.R
-echo "library(directlabels)">>script.R
-echo "ymax<-max(data\$LogP,na.rm = TRUE)">>script.R
-echo "ymin<-min(data\$LogP,na.rm = TRUE)">>script.R
-echo "xmax<-max(data\$FC,na.rm = TRUE)">>script.R
-echo "xmin<-min(data\$FC,na.rm = TRUE)">>script.R
+library(ggplot2)
+library(wesanderson)
+library(directlabels)
+ymax<-max(data\$LogP,na.rm = TRUE)
+ymin<-min(data\$LogP,na.rm = TRUE)
+xmax<-max(data\$FC,na.rm = TRUE)
+xmin<-min(data\$FC,na.rm = TRUE)
 
-echo "p<- ggplot(data, aes(x=data\$FC, y=data\$LogP,label=row.names(data))) + geom_point(shape=19, alpha=1/8, color=\"red\", aes(size=data\$\"Phenotype SNPs\"), max_size=max(data\$\"Phenotype SNPs\")) + xlab(\"Fold change\") + ylab(\"-log P-value\") + ggtitle (\"GWAS SNPs enrichment - binomial test\") + geom_dl(aes(label=row.names(data)), method=list(\"first.bumpup\"), col=\"blue\", alpha=1/2)+ylim(ymin, ymax) +xlim(xmin-3, xmax)" >>script.R
-echo "pdf(\"output.pdf\",width=10, height=8)">>script.R
-echo "print(p+ geom_dl(aes(colour = data\$\"Category\"), method=list(\"first.bumpup\")) + scale_colour_hue(name=\"Category\") + labs(size=\"Phenotype SNPs\", color=\"Category\") + scale_size(range = c(0,50)) + theme(axis.text=element_text(size=16), axis.title=element_text(size=18,face=\"bold\")) + scale_color_manual(values = c(wes_palette(\"Cavalcanti1\"), wes_palette(\"Royal1\"), wes_palette(\"GrandBudapest2\"), wes_palette(\"Royal2\"), wes_palette(\"Darjeeling2\"), wes_palette(\"Zissou1\")))) ">> script.R
-echo "dev.off()">>script.R
+p<- ggplot(data, aes(x=data\$FC, y=data\$LogP,label=row.names(data))) + geom_point(shape=19, alpha=1/8, color=\"red\", aes(size=data\$\"Phenotype SNPs\"), max_size=max(data\$\"Phenotype SNPs\")) + xlab(\"Fold change\") + ylab(\"-log P-value\") + ggtitle (\"GWAS SNPs enrichment - binomial test\") + geom_dl(aes(label=row.names(data)), method=list(\"first.bumpup\"), col=\"blue\", alpha=1/2)+xlim(xmin-1, xmax)
+pdf(\"output.pdf\",width=10, height=8)
+print(p+ geom_dl(aes(colour = data\$\"Category\"), method=list(\"first.bumpup\")) + scale_colour_hue(name=\"Category\") + labs(size=\"Phenotype SNPs\", color=\"Category\") + scale_size(range = c(0,50)) + theme(axis.text=element_text(size=16), axis.title=element_text(size=18,face=\"bold\")) + scale_color_manual(values = c(wes_palette(\"Cavalcanti1\"), wes_palette(\"Royal1\"), wes_palette(\"GrandBudapest2\"), wes_palette(\"Royal2\"), wes_palette(\"Darjeeling2\"), wes_palette(\"Zissou1\")))) 
+dev.off()">>script.R
 
 
 chmod 775 script.R
