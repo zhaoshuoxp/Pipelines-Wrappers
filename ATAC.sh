@@ -42,7 +42,7 @@ fi
 fastqc -f fastq -o fastqc $1 
 fastqc -f fastq -o fastqc $2
 
-# cutadapt to trim adaptors
+# cutadapt to trim adaptors Nextera index
 cutadapt -f fastq -m 30 -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -g AGATGTGTATAAGAGACAG -G AGATGTGTATAAGAGACAG -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
 
 # bowtie2 aligment #up to: 2 aligment/insert 2000bp
