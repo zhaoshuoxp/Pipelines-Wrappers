@@ -12,7 +12,8 @@ fi
 current=$(pwd)
 plar_path=/home/quanyi/app/PLAR
 plar=$plar_path/find_lincs.csh
-cpc2=/home/quanyi/app/CPC2-beta/bin/CPC2.py
+cpc2_path=/home/quanyi/app/CPC2-beta
+cpc2=$cpc2_path/bin/CPC2.py
 
 # generate GTF files list and BAM file args
 for i in $*
@@ -39,9 +40,9 @@ $plar plar_process_cuffmerge $output_dir/ hg19 $output_dir/merged/merged.gtf $pl
 $plar plar_identify_lincs $output_dir/ hg19 $label $plar_path/hg19_ensembl.genes $plar_path/hg19_ensembl.info1 $plar_path/hg19_ensembl.info2 $plar_path/hg19.refseq_genes $plar_path/hg19.refseq_other NONE $output_dir/merged/isoforms.fpkm_tracking $plar_path/hg19.repeat 200 2000 0.1 5 TRUE 
 
 #Analyze the ORF sizes in candidate lincRNAs and prepare input files for CPC, HMMer
-$plar plar_analyze_sequences $output_dir/ hg19 $plar_path/hg19.2bit $plar_path/hg19_mask.2bit $(pwd)/$output_dir/sequences/ $cpc2/
+$plar plar_analyze_sequences $output_dir/ hg19 $plar_path/hg19.2bit $plar_path/hg19_mask.2bit $(pwd)/$output_dir/sequences/ $cpc2_path/
 
-#Run CPĆ2
+#Run CPC2
 cd $output_dir/sequences
 cat *.fa > all.fa
 $cpc2 -i all.fa -o cpc2.result
@@ -61,6 +62,7 @@ cd ..
 #Further filter transcripts near coding genes etc.
 $plar plar_filter $output_dir/ hg19 $plar_path/hg19_ensembl.genes $plar_path/hg19_ensembl.info1 $plar_path/hg19_ensembl.info2 $plar_path/hg19.gap $plar_path/hg19.size 500 2000 TRUE
 
+rm cpc_names.txt
 
 ################ END ################
 #          Created by Aone          #
