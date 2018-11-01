@@ -61,7 +61,6 @@ cd ..
 #Further filter transcripts near coding genes etc.
 $plar plar_filter $output_dir/ hg19 $plar_path/hg19_ensembl.genes $plar_path/hg19_ensembl.info1 $plar_path/hg19_ensembl.info2 $plar_path/hg19.gap $plar_path/hg19.size 500 2000 TRUE
 
-rm cpc_names.txt
 
 ################ END ################
 #          Created by Aone          #
