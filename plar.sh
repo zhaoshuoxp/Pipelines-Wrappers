@@ -42,22 +42,38 @@ $plar plar_identify_lincs $output_dir/ hg19 $label $plar_path/hg19_ensembl.genes
 #Analyze the ORF sizes in candidate lincRNAs and prepare input files for CPC, HMMer
 $plar plar_analyze_sequences $output_dir/ hg19 $plar_path/hg19.2bit $plar_path/hg19_mask.2bit $(pwd)/$output_dir/sequences/ $cpc2_path/
 
+# custom code for CPC2 and HMMER
+##########################
 #Run CPC2
+#cd $output_dir/sequences
+#$cpc2 -i all.fa -o cpc2.result
+#awk '{if ($8=="coding"){print $1}}' cpc2.result |cut -f 3 -d '|' > ../coding.list
+
+#Run HMMER
+#cat *.faa >all.faa
+#hmmscan --cpu 16 --noali --tblout hmm.result -E 0.001 -o hmm.log $plar_path/Pfam/Pfam-A.hmm all.faa
+#cut -f 3 -d '|' hmm.result |grep -v ^# >> ../coding.list
+
+#Remove protein coding potential lncRNA (combined HMMER and CPC2 results)
+#gunzip -c hg19.lincs.f1.bed.gz |grep -v -f coding.list |gzip > hg19.lincs.f1.clean.bed.gz
+#rm coding.list
+#cd ../..
+#########################
+
 cd $output_dir/sequences
 cat *.fa > all.fa
 $cpc2 -i all.fa -o cpc2.result
-awk '{if ($8=="coding"){print $1}}' cpc2.result |cut -f 3 -d '|' > ../coding.list
+awk -v OFS="\t" '{print $1,$2,$8,$4}' cpc2.result > cpc.result
+rm $cpc2_path/run_hg19.csh
 
 #Run HMMER
-hmmsearch --cpu 32 --noali --tblout hmm.result -E 0.001 -o hmm.log $plar_path/Pfam/Pfam-A.hmm all.fa
-cut -f 3 -d '|' hmm.result |grep -v ^# >> ../coding.list
-cd ..
-rm -r sequences
+cat *.faa >all.faa
+hmmscan --cpu 16 -o hmmer.log --noali -E 0.001 --tblout hmmer.result $plar_path/Pfam/Pfam-A.hmm all.faa
+rm hg19_hmmer_all.csh
+cd ../..
 
-#Remove protein coding potential lncRNA (combined HMMER and CPC2 results)
-gunzip -c hg19.lincs.f1.bed.gz |grep -v -f coding.list |gzip > hg19.lincs.f1.clean.bed.gz
-rm coding.list
-cd ..
+#Combine the results of the coding predictors
+$plar plar_parse_predictors $output_dir/ hg19 NONE $output_dir/sequences/hmmer.result $output_dir/sequences/cpc.result
 
 #Further filter transcripts near coding genes etc.
 $plar plar_filter $output_dir/ hg19 $plar_path/hg19_ensembl.genes $plar_path/hg19_ensembl.info1 $plar_path/hg19_ensembl.info2 $plar_path/hg19.gap $plar_path/hg19.size 500 2000 TRUE
