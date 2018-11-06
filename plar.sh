@@ -1,11 +1,12 @@
 #!/bin/bash
 #####################################
-# Usage:  plar.sh OUTPUTDIR labelC1,labelC2.. C1_rep1.gtf C1_rep2.gtf.. C2_rep1.gtf C2_rep2.gtf.. C1_rep1.bam,C1_rep2.bam.. C2_rep1.bam,C2_rep2.bam..      #
+# Usage:  plar.sh OUTPUTDIR labelC1,labelC2.. fr|rf|un(null) C1_rep1.gtf C1_rep2.gtf.. C2_rep1.gtf C2_rep2.gtf.. C1_rep1.bam,C1_rep2.bam.. C2_rep1.bam,C2_rep2.bam..      #
 # Manual:                           #
 #####################################
 # setup PATH
 output_dir=$1
 label=$2
+
 if [ ! -d $output_dir ];then 
 mkdir -p $1/sequences
 fi
@@ -20,18 +21,28 @@ for i in $*
 do
 	if [ "${i##*.}"x = "gtf"x ];then
 		echo $i >> $output_dir/gtf.list
-	fi
-	if [ "${i##*.}"x = "bam"x ];then
+	elif [ "${i##*.}"x = "bam"x ];then
 		bam=${bam}" "${i}
 	fi
 done
+
+# deternmine the strand direction
+if [ $3='fr' ];then
+	strand='fr-secondstrand'
+elif [ $3='rf' ];then
+	strand='fr-firststrand'
+elif [ $3='un' ];then
+	strand='fr-unstranded'
+else
+	strand='fr-unstranded'
+fi
 
 # stringtie merge multi gtf files
 stringtie --merge -G $plar_path/hg19_ensembl.gtf -o $output_dir/merged/merged.gtf $output_dir/gtf.list
 rm $output_dir/gtf.list
 
 # cuffdiff for fpkm 
-cuffdiff -p 8 -q -L $label -o $output_dir/merged $output_dir/merged/merged.gtf $bam
+cuffdiff -p 8 -q -L $label -o $output_dir/merged --total-hits-norm --library-typ $strand $output_dir/merged/merged.gtf $bam
 
 #Process the Cuffmerge file: The first step traverses the cuffmerge output (merged.gtf): 
 $plar plar_process_cuffmerge $output_dir/ hg19 $output_dir/merged/merged.gtf $plar_path/hg19_ensembl.genes $plar_path/hg19.size
