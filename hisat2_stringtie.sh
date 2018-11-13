@@ -32,11 +32,11 @@ elif [ $4 = 'rf' ];then
 	strand2='--rf'
 	strand3=''
 elif [ $4 = 'un' ];then
-	strand1=''
+	strand1='--dta-cufflinks'
 	strand2=''
 	strand3='--outSAMstrandField intronMotif'
 else
-	strand1=''
+	strand1='--dta-cufflinks'
 	strand2=''
 	strand3='--outSAMstrandField intronMotif'
 fi
@@ -53,7 +53,7 @@ fastqc -f fastq -o logs $2
 cutadapt -f fastq -m 20 -a AGATCGGAAGAGC -A AGATCGGAAGAGC -g GCTCTTCCGATCT -G GCTCTTCCGATCT -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
 
 # HISAT2--mapping
-hisat2 $strand1 --dta-cufflinks -p $threads -x $index -1 $3_R1_trimmed.gz -2 $3_R2_trimmed.gz -S $3.sam 
+hisat2 $strand1 -p $threads -x $index -1 $3_R1_trimmed.gz -2 $3_R2_trimmed.gz -S $3.sam 
 
 samtools view -b -@ $threads $3.sam -o $3.bam
 samtools sort -@ $threads $3.bam -o $3_srt.bam
