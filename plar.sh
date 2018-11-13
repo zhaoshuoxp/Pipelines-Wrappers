@@ -42,7 +42,7 @@ stringtie --merge -G $plar_path/hg19_ensembl.gtf -o $output_dir/merged/merged.gt
 rm $output_dir/gtf.list
 
 # cuffdiff for fpkm 
-cuffdiff -p 8 -q -L $label -o $output_dir/merged --total-hits-norm --library-typ $strand $output_dir/merged/merged.gtf $bam
+cuffdiff -p 8 -q -L $label -o $output_dir/merged --library-typ $strand $output_dir/merged/merged.gtf $bam
 
 #Process the Cuffmerge file: The first step traverses the cuffmerge output (merged.gtf): 
 $plar plar_process_cuffmerge $output_dir/ hg19 $output_dir/merged/merged.gtf $plar_path/hg19_ensembl.genes $plar_path/hg19.size
