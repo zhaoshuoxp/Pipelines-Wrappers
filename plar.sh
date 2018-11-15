@@ -38,7 +38,7 @@ else
 fi
 
 # stringtie merge multi gtf files
-stringtie --merge -G $plar_path/hg19_ensembl.gtf -o $output_dir/merged/merged.gtf $output_dir/gtf.list
+stringtie --merge -G $plar_path/hg19_ensembl.gtf -F 0 -T 0 -f 0 -c 0 -o $output_dir/merged/merged.gtf $output_dir/gtf.list
 rm $output_dir/gtf.list
 
 # cuffdiff for fpkm 
