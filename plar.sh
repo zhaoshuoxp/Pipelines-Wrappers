@@ -48,7 +48,7 @@ cuffdiff -p 8 -q -L $label -o $output_dir/merged --library-typ $strand $output_d
 $plar plar_process_cuffmerge $output_dir/ hg19 $output_dir/merged/merged.gtf $plar_path/hg19_ensembl.genes $plar_path/hg19.size
 
 #Annotate the transcriptome and identify potential lincRNAs:
-$plar plar_identify_lincs $output_dir/ hg19 $label $plar_path/hg19_ensembl.genes $plar_path/hg19_ensembl.info1 $plar_path/hg19_ensembl.info2 $plar_path/hg19.refseq_genes $plar_path/hg19.refseq_other NONE $output_dir/merged/isoforms.fpkm_tracking $plar_path/hg19.repeat 200 2000 0.1 5 TRUE 
+$plar plar_identify_lincs $output_dir/ hg19 $label $plar_path/hg19_ensembl.genes $plar_path/hg19_ensembl.info1 $plar_path/hg19_ensembl.info2 $plar_path/hg19.refseq_genes $plar_path/hg19.refseq_other NONE $output_dir/merged/isoforms.fpkm_tracking $plar_path/hg19.repeat 200 200 0.1 1 TRUE 
 
 #Analyze the ORF sizes in candidate lincRNAs and prepare input files for CPC, HMMer
 $plar plar_analyze_sequences $output_dir/ hg19 $plar_path/hg19.2bit $plar_path/hg19_mask.2bit $(pwd)/$output_dir/sequences/ $cpc2_path/
