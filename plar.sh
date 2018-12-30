@@ -89,6 +89,12 @@ $plar plar_parse_predictors $output_dir/ hg19 NONE $output_dir/sequences/hmmer.r
 #Further filter transcripts near coding genes etc.
 $plar plar_filter $output_dir/ hg19 $plar_path/hg19_ensembl.genes $plar_path/hg19_ensembl.info1 $plar_path/hg19_ensembl.info2 $plar_path/hg19.gap $plar_path/hg19.size 500 2000 TRUE
 
+#Add single-exon lncRNA back
+gunzip -c $output_dir/hg19.lincs.f1.pure.bed.gz > $output_dir/hg19.lincs.f1.pure.bed
+gunzip -c $output_dir/hg19.lincs.f1.with_filters.bed.gz > $output_dir/hg19.lincs.f1.with_filters.bed
+awk '$10==1' $output_dir/hg19.lincs.f1.with_filters.bed >> $output_dir/hg19.lincs.f1.pure.bed
+sort -u $output_dir/hg19.lincs.f1.pure.bed | sort -k1,1 -k2,2n > final_lncRNA.bed
+
 rm cpc_names.txt
 
 ################ END ################
