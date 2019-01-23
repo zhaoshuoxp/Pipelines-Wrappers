@@ -26,7 +26,8 @@ samtools sort -@ $thread -o $3_rRNA_srt.bam $3_rRNA.bam
 echo "$3 rRNA contamination:" > $3_rRNA.log
 samtools flagstat -@ $thread $3_rRNA_srt.bam >> $3_rRNA.log
 
-
+# clean
+rm $3_rRNA_srt.bam $3_rRNA.bam
 
 ################ END ################
 #          Created by Aone          #
