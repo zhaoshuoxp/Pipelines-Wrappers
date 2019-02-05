@@ -14,7 +14,7 @@ if [ $3 ];then
 	fi
 fi
 # convert FitHiC output to WashU longrange format
-awk -v OFS="," '{print $1"\t"$2-'$res'"\t"$2+'$res'"\t"$3":"$4-'$res'"-"$4+'$res',-log('$score')"\n"$3"\t"$4-'$res'"\t"$4+'$res'"\t"$1":"$2-'$res'"-"$2+'$res',-log('$score')}' $1 > $1.temp
+awk -v OFS="," -F"\t" '{print $1"\t"$2-'$res'"\t"$2+'$res'"\t"$3":"$4-'$res'"-"$4+'$res',-log('$score')"\n"$3"\t"$4-'$res'"\t"$4+'$res'"\t"$1":"$2-'$res'"-"$2+'$res',-log('$score')}' $1 > $1.temp
 # get max -log(q_value), in case of q_value=0
 max_q=$(awk -F"," 'BEGIN {max = 0} {if ($2+0> max) max=$2} END {print max}' $1.temp)
 # replace "inf" to max -log(q_value)
