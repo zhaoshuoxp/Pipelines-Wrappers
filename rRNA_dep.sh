@@ -23,6 +23,7 @@ bwa_rRNA_idx(){
 }
 
 # set up
+threads=24
 genome=/home/quanyi/genome/hg19/GRCh37.p13.genome.fa
 gtf=/home/quanyi/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf
 

@@ -16,11 +16,11 @@ which stringtie &>/dev/null || { echo "stringtie not found!"; exit 1; }
 READS1=$1
 READS2=$2
 NAME=$3
-#gtf=/home/quanyi/genome/hg19/gencode.v19.annotation.gtf
-gtf=/home/quanyi/app/PLAR/hg19_ensembl.gtf
+gtf=/home/quanyi/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf
+#gtf=/home/quanyi/app/PLAR/hg19_ensembl.gtf
 index=/home/quanyi/genome/hg19/HISAT2index/genome_tran
 #STAR_idx=/home/quanyi/genome/hg19/STARindex
-threads=8
+threads=16
 
 # deternmine the strand direction
 if [ $4 = 'fr' ];then
@@ -46,11 +46,11 @@ mkdir logs
 fi
 
 # fastqc control
-fastqc -f fastq -o logs $1 
-fastqc -f fastq -o logs $2
+fastqc -f fastq -t $threads -o logs $1 
+fastqc -f fastq -t $threads -o logs $2
 
 # cutadapt--trim adaptors Trueseq index
-cutadapt -f fastq -m 20 -a AGATCGGAAGAGC -A AGATCGGAAGAGC -g GCTCTTCCGATCT -G GCTCTTCCGATCT -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
+cutadapt -f fastq -m 30 -j $threads -a AGATCGGAAGAGC -A AGATCGGAAGAGC -g GCTCTTCCGATCT -G GCTCTTCCGATCT -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
 
 # HISAT2--mapping
 hisat2 $strand1 -p $threads -x $index -1 $3_R1_trimmed.gz -2 $3_R2_trimmed.gz -S $3.sam 

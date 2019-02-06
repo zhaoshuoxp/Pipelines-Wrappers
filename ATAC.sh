@@ -19,7 +19,7 @@ which bedClip &>/dev/null || { echo "bedClip not found!"; exit 1; }
 READS1=$1
 READS2=$2
 NAME=$3
-threads=6
+threads=16
 wget https://github.com/broadinstitute/picard/releases/download/2.18.12/picard.jar
 curl -s ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/chromInfo.txt.gz | gunzip -c > hg19_len
 
@@ -39,11 +39,11 @@ mkdir macs2
 fi 
 
 # fastqc control
-fastqc -f fastq -o fastqc $1 
-fastqc -f fastq -o fastqc $2
+fastqc -f fastq -t $threads -o fastqc $1 
+fastqc -f fastq -t $threads -o fastqc $2
 
 # cutadapt to trim adaptors Nextera index
-cutadapt -f fastq -m 30 -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -g AGATGTGTATAAGAGACAG -G AGATGTGTATAAGAGACAG -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
+cutadapt -f fastq -m 30 -j $threads -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -g AGATGTGTATAAGAGACAG -G AGATGTGTATAAGAGACAG -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
 
 # bowtie2 aligment #up to: 2 aligment/insert 2000bp
 bowtie2 -k 4 -X 2000 --local --mm -p $threads -x $bowtie2index_hg19 -1 $3_R1_trimmed.gz -2 $3_R2_trimmed.gz -S $3.sam

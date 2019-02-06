@@ -15,6 +15,7 @@ which bedGraphToBigWig &>/dev/null || { echo "bedGraphToBigWig not found!"; exit
 READS1=$1
 NAME=$2
 #picard=/home/quanyi/app/picard.jar
+threads=16
 
 if [ ! -d logs ]
 then 
@@ -27,34 +28,34 @@ mkdir fastqc
 fi 
 
 # fastqc control
-fastqc -f fastq -o fastqc $1 
+fastqc -f fastq -t $threads -o fastqc $1 
 
 # cutadapt to trim adaptors
-cutadapt -f fastq -m 20 -a AGATCGGAAGAGC -g GCTCTTCCGATCT -o $2_trimmed.gz $1 > ./logs/$2_cutadapt.log
+cutadapt -f fastq -m 20 -j $threads -a AGATCGGAAGAGC -g GCTCTTCCGATCT -o $2_trimmed.gz $1 > ./logs/$2_cutadapt.log
 
 # bwa aln alignment
-bwa aln -t 16 -k 2 -l 18 $bwaindex_hg19 $2_trimmed.gz > $2.sai
+bwa aln -t $threads -k 2 -l 18 $bwaindex_hg19 $2_trimmed.gz > $2.sai
 bwa samse $bwaindex_hg19 $2.sai $2_trimmed.gz > $2.sam
 
 # samtools convert/sort
-samtools view -b -@ 8 -o $2.bam $2.sam 
-samtools sort -@ 8 -o $2_srt.bam $2.bam
+samtools view -b -@ $threads -o $2.bam $2.sam 
+samtools sort -@ $threads -o $2_srt.bam $2.bam
 
 # picard markduplicates
 #java -jar $picard MarkDuplicates INPUT=$2_srt.bam OUTPUT=$2_rmdup.bam METRICS_FILE=./logs/$2_dup.log REMOVE_DUPLICATES=false
 samtools rmdup -s $2_srt.bam $2_rmdup.bam
 
 echo 'flagstat after mkdup:' >> ./logs/$2_align.log
-samtools flagstat -@ 8 $2_rmdup.bam >> ./logs/$2_align.log
+samtools flagstat -@ $threads $2_rmdup.bam >> ./logs/$2_align.log
 
 # remove unpaired/unmapped/duplicates/failedQC
 # Do NOT do filtering when Pooled ChIPseq!!!
-samtools index $2_rmdup.bam
-samtools view -@ 8 -f 2 -F 1796 -b -o $2_filtered.bam $2_rmdup.bam
+samtools index -@ $threads $2_rmdup.bam
+samtools view -@ $threads -f 2 -F 1796 -b -o $2_filtered.bam $2_rmdup.bam
 
 echo >> ./logs/$2_align.log
 echo 'flagstat after filter:' >> ./logs/$2_align.log
-samtools flagstat -@ 8 $2_filtered.bam >> ./logs/$2_align.log
+samtools flagstat -@ $threads $2_filtered.bam >> ./logs/$2_align.log
 bamToBed -i $2_filtered.bam > $2_filtered.bed
 
 # BAM to BW 
