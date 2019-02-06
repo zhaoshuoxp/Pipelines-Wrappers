@@ -50,6 +50,7 @@ fastqc -f fastq -t $threads -o logs $1
 fastqc -f fastq -t $threads -o logs $2
 
 # cutadapt--trim adaptors Trueseq index
+# python3 version required for -j
 cutadapt -f fastq -m 30 -j $threads -a AGATCGGAAGAGC -A AGATCGGAAGAGC -g GCTCTTCCGATCT -G GCTCTTCCGATCT -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
 
 # HISAT2--mapping

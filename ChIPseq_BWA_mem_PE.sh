@@ -34,6 +34,7 @@ fastqc -f fastq -t $threads -o fastqc $1
 fastqc -f fastq -t $threads -o fastqc $2
 
 # cutadapt to trim adaptors
+# python3 version required for -j
 cutadapt -f fastq -m 30 -j $threads -a AGATCGGAAGAGC -A AGATCGGAAGAGC -g GCTCTTCCGATCT -G GCTCTTCCGATCT -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
 
 # bwa mem alignment
