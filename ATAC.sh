@@ -105,6 +105,7 @@ macs2 callpeak -t ../$3_shift.bed -g hs -n $3 -f BEDPE --keep-dup all --broad -B
 mv $3_control_lambda.bdg $3_control_lambda_SPMR.bdg
 mv $3_treat_pileup.bdg $3_treat_pileup_SPMR.bdg
 mv $3_peaks.xls $3_broad.xls
+mv $3_summits.bed $3_broad_summits.bed 
 
 # convert bdg to bigwig file # see macs2 doc
 curl -s https://gist.githubusercontent.com/taoliu/2469050/raw/34476e91ebd3ba9d26345da88fd2a4e7b893deea/bdg2bw > bedGraph2bigwig.sh
@@ -119,6 +120,7 @@ macs2 callpeak -t ../$3_shift.bed -g hs -n $3 -f BEDPE -B --keep-dup all
 #macs2 callpeak -t ../$3_shift_se.bed -g hs -n $3 -f BED --keep-dup all -B --nomodel --shift -37 --extsize 73
 
 mv $3_peaks.xls $3_narrow.xls
+mv $3_summits.bed $3_narrow_summits.bed 
 
 # Blacklist filtering
 curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz | gunzip -c > bklt_hg19
