@@ -31,9 +31,10 @@ cisVar tidy -F $prefix -r $DEP -b ${prefix}.locations.bed.gz
 
 #Plot pre-post QTLs 
 #Need gplots package
-plot_fun.R ${prefix}.${IND}.total.txt
+plot_fun.R ${prefix}.${DEP}.total.txt
 
-rm *.log
+#Clean
+rm ${prefix}.genotypes.txt.gz.*.gz.parse.log
 ################ END ################
 #          Created by Aone          #
 #     quanyi.zhao@stanford.edu      #
