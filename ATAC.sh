@@ -44,7 +44,7 @@ fastqc -f fastq -t $threads -o fastqc $2
 
 # cutadapt to trim adaptors Nextera index
 # python3 version required for -j
-cutadapt -f fastq -m 30 -j $threads -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -g AGATGTGTATAAGAGACAG -G AGATGTGTATAAGAGACAG -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
+cutadapt -m 30 -j $threads -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -g AGATGTGTATAAGAGACAG -G AGATGTGTATAAGAGACAG -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
 
 # bowtie2 aligment #up to: 2 aligment/insert 2000bp
 bowtie2 -X 2000 --local --mm -p $threads -x $bowtie2index_hg19 -1 $3_R1_trimmed.gz -2 $3_R2_trimmed.gz -S $3.sam

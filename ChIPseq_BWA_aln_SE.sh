@@ -32,7 +32,7 @@ fastqc -f fastq -t $threads -o fastqc $1
 
 # cutadapt to trim adaptors
 # python3 version required for -j
-cutadapt -f fastq -m 20 -j $threads -a AGATCGGAAGAGC -g GCTCTTCCGATCT -o $2_trimmed.gz $1 > ./logs/$2_cutadapt.log
+cutadapt -m 20 -j $threads -a AGATCGGAAGAGC -g GCTCTTCCGATCT -o $2_trimmed.gz $1 > ./logs/$2_cutadapt.log
 
 # bwa aln alignment
 bwa aln -t $threads -k 2 -l 18 $bwaindex_hg19 $2_trimmed.gz > $2.sai
