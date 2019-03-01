@@ -226,7 +226,7 @@ xmin<-min(data\$FC,na.rm = TRUE)
 
 p<- ggplot(data, aes(x=data\$FC, y=data\$LogP,label=row.names(data))) + geom_point(shape=19, alpha=1/8, color=\"red\", aes(size=data\$\"Phenotype SNPs\"), max_size=max(data\$\"Phenotype SNPs\")) + xlab(\"Fold change\") + ylab(\"-log P-value\") + ggtitle (\"GWAS SNPs enrichment - binomial test\") + geom_dl(aes(label=row.names(data)), method=list(\"first.bumpup\"), col=\"blue\", alpha=1/2)+xlim(xmin-1, xmax)
 pdf(\"output.pdf\",width=10, height=8)
-print(p+ geom_dl(aes(colour = data\$\"Category\"), method=list(\"first.bumpup\")) + scale_colour_hue(name=\"Category\") + labs(size=\"Phenotype SNPs\", color=\"Category\") + scale_size(range = c(0,50)) + theme(axis.text=element_text(size=16), axis.title=element_text(size=18,face=\"bold\")) + scale_color_manual(values = c(wes_palette(\"Cavalcanti1\"), wes_palette(\"Royal1\"), wes_palette(\"GrandBudapest2\"), wes_palette(\"Royal2\"), wes_palette(\"Darjeeling2\"), wes_palette(\"Zissou1\")))) 
+print(p+ geom_dl(aes(colour = data\$\"Category\"), method=list(\"first.bumpup\")) + scale_colour_hue(name=\"Category\") + labs(size=\"Phenotype SNPs\", color=\"Category\") + scale_size(range = c(10,40)) + theme(axis.text=element_text(size=16), axis.title=element_text(size=18,face=\"bold\")) + scale_color_manual(values = c(wes_palette(\"Cavalcanti1\"), wes_palette(\"Royal1\"), wes_palette(\"GrandBudapest2\"), wes_palette(\"Royal2\"), wes_palette(\"Darjeeling2\"), wes_palette(\"Zissou1\")))) 
 dev.off()">>script.R
 
 
