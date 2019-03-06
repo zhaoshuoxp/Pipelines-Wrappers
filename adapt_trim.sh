@@ -1,8 +1,6 @@
 #!/bin/bash
-#####################################
-# Usage:                            #
-# Manual:                           #
-#####################################
+
+# check dependences
 # multi-core support requires cutadapt installed and run by python3
 which cutadapt &>/dev/null || { echo "cutadapt not found, install by pip3!"; exit 1; }
 which python3 &>/dev/null || { echo "python3 not found, install python3!"; exit 1; }
@@ -11,6 +9,7 @@ which python3 &>/dev/null || { echo "python3 not found, install python3!"; exit 
 help(){
 	cat <<-EOF
 	adapt_trim.sh <options> <reads1>|..<reads2> 
+	-p Prefix of output
 	-t Threads (1 default)
 	-s Single-end mod (Paired-end default)
 	-n Nextera adapters (Trueseq default)
@@ -21,7 +20,7 @@ EOF
 
 # cutadapt CMD
 adapt_trim(){
-	if [ $1='se' ];then
+	if [ $1 = 'se' ];then
 		# single-end CMD
 		cutadapt -m 30 -j $2 -a $3 -g $4 -o ${5}_trimmed.fastq.gz $6 > ${5}_cutadapt.log
 	else
@@ -45,7 +44,7 @@ gG='GCTCTTCCGATCT'
 # default 1 core to run
 threads=1
 
-while getopts "snt:h" arg
+while getopts "snt:hp:" arg
 do
 	case $arg in
 		t) threads=$OPTARG;;
@@ -54,6 +53,7 @@ do
 		# Nextera adapters
 		n) aA='CTGTCTCTTATACACATCT'
 		   gG='AGATGTGTATAAGAGACAG';;
+		p) prefix=$OPTARG;;
 		h) help ;;
 		?) help
 			exit 1;;
@@ -63,7 +63,14 @@ done
 # shift ARGs to reads
 shift $(($OPTIND - 1))
 # get prefix of output
-prefix=${1%.*}
+if [ -z $prefix ];then
+	echo "No -p <prefix> given, use file name as prefix"
+	if [ $mod = 'se' ];then
+		prefix=${1%.*}
+	else
+		prefix=${1%_R1*}
+	fi
+fi
 
 # main
 adapt_trim $mod $threads $aA $gG $prefix $1 $2
