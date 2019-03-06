@@ -9,6 +9,7 @@ which python3 &>/dev/null || { echo "python3 not found, install python3!"; exit 
 help(){
 	cat <<-EOF
 	adapt_trim.sh <options> <reads1>|..<reads2> 
+	Trim adapter sequences from fastq files with cutadapt@python3
 	-p Prefix of output
 	-t Threads (1 default)
 	-s Single-end mod (Paired-end default)
