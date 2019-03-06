@@ -20,7 +20,7 @@ READS1=$1
 READS2=$2
 NAME=$3
 threads=16
-wget https://github.com/broadinstitute/picard/releases/download/2.18.12/picard.jar
+wget https://github.com/broadinstitute/picard/releases/download/2.18.27/picard.jar
 curl -s ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/chromInfo.txt.gz | gunzip -c > hg19_len
 
 if [ ! -d logs ]
