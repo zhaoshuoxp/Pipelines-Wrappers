@@ -27,14 +27,18 @@ bwaindex_hg19='/home/quanyi/genome/hg19/BWAindex/hg19bwa'
 # help message
 help(){
 	cat <<-EOF
-	Usage: ChIPseq.sh <options> <reads1>|..<reads2> 
-	QC fastq files and align to hg19/GRCh37 using BWA, convert to filtered BAM/BED and bigwig format. 
-	-i BWA index PATH
-	-p Prefix of output
-	-t Threads (1 default)
-	-s Single-end mod (Paired-end default)
-	-a Use BWA aln algorithm (BWA mem default)
-	-h Print this help message
+  Usage: ChIPseq.sh <options> <reads1>|..<reads2> 
+  Single-end or Paired-end fastq files with _R1/2 extension are required,
+  This scripts will QC fastq files and align to hg19/GRCh37 using BWA, 
+  convert to filtered BAM/BED and bigwig format but DOES NOT call peaks,
+  All results will be store in current (./) directory.
+  Options:
+    -i BWA index PATH
+    -p Prefix of output
+    -t Threads (1 default)
+    -s Single-end mod (Paired-end default)
+    -a Use BWA aln algorithm (BWA mem default)
+    -h Print this help message
 EOF
 	exit 0
 }
@@ -91,7 +95,7 @@ bam2bigwig(){
 }
 
 # SAM2BAM and filtering to BED
-sam2bed(){
+sam_bam_bed(){
 	# sam2bam+sort
 	samtools view -b -@ $threads -o ${1}.bam ${1}.sam 
 	samtools sort -@ $threads -o ${1}_srt.bam ${1}.bam
@@ -106,7 +110,7 @@ sam2bed(){
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
-		#clean
+		# clean
 		rm ${1}.bam ${1}_rm.bam
 	# paired-end CMD
 	else
@@ -128,7 +132,7 @@ sam2bed(){
 		# bedpe to standard PE bed for macs2 peak calling (-f BEDPE)
 		cut -f1,2,6 ${1}.bedpe > $3_pe.bed
 		# clean
-		rm ${1}.bam2 ${1}.bedpe
+		rm ${1}.bam2 ${1}.bedpe picard.jar
 	fi
 }
 
@@ -181,7 +185,7 @@ fi
 
 QC_mapping $mod $alg $prefix $1 $2
 
-sam2bed $prefix $mod
+sam_bam_bed $prefix $mod
 
 bam2bigwig $prefix ${prefix}_filtered.bam
 
