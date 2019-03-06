@@ -60,7 +60,7 @@ QC_mapping(){
 		# TruSeq adapter trimming
 		cutadapt -m 30 -j $threads -a $aA -A $aA -g $gG -G $gG -o ${2}_trimmed_R1.fastq.gz -p ${2}_trimmed_R2.fastq.gz $3 $4 > ./logs/${2}_cutadapt.log
 		# Bowtie2 align
-		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index_hg19 -1 ${2}_R1_trimmed.gz -2 ${2}_R2_trimmed.gz -S ${2}.sam
+		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index_hg19 -1 ${2}_trimmed_R1.fastq.gz -2 ${2}_trimmed_R2.fastq.gz -S ${2}.sam
 		echo 'Bowtie2 mapping summary:' > ./logs/${2}_align.log
 		tail -n 15 nohup.out >> ./logs/${2}_align.log
 	fi
@@ -100,7 +100,7 @@ sam_bam_bed(){
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
 		# clean
-		rm ${1}.bam ${1}_rm.bam ${1}_rm.bam.bai ${1}_chrM.bam
+		rm ${1}_rm.bam ${1}_rm.bam.bai 
 	# paired-end CMD
 	else
 		# download picard.jar for PE duplicates removal
@@ -122,10 +122,11 @@ sam_bam_bed(){
 		# bam2bedpe
 		bamToBed -bedpe -i ${1}.bam2 > ${1}.bedpe
 		# bedpe to standard PE bed for macs2 peak calling (-f BEDPE)
-		cut -f1,2,6 ${1}.bedpe > $3_pe.bed
+		cut -f1,2,6 ${1}.bedpe > ${1}_pe.bed
 		# clean
-		rm ${1}.bam ${1}_srt.bam ${1}_chrM.bam  ${1}.bam2 ${1}.bedpe picard.jar 
+		rm ${1}_srt.bam ${1}.bam2 ${1}.bedpe picard.jar 
 	fi
+	rm ${1}.bam ${1}.sam ${1}_chrM.bam 
 }
 
 # Peak calling with MACS2 >v2.1.1
@@ -189,30 +190,34 @@ if [ -z $prefix ];then
 fi
 
 # main
-if [ ! -d logs ]
-then 
-mkdir logs
-fi
+main(){
+	if [ ! -d logs ]
+	then 
+	mkdir logs
+	fi
 
-if [ ! -d fastqc ]
-then 
-mkdir fastqc
-fi 
+	if [ ! -d fastqc ]
+	then 
+	mkdir fastqc
+	fi 
 
-if [ ! -d macs2 ]
-then 
-mkdir macs2
-fi 
+	if [ ! -d macs2 ]
+	then 
+	mkdir macs2
+	fi 
 
-QC_mapping $mod $prefix $1 $2
+	QC_mapping $mod $prefix $1 $2
 
-sam_bam_bed $prefix $mod
+	sam_bam_bed $prefix $mod
 
-bam2bigwig $prefix ${prefix}_filtered.bam
+	bam2bigwig $prefix ${prefix}_filtered.bam
 
-peak_calling $mod $prefix
+	peak_calling $mod $prefix
 
-blacklist_filter $prefix
+	blacklist_filter $prefix
+}
+
+main $1 $2
 
 # check running status
 if [ $? -ne 0 ]; then
