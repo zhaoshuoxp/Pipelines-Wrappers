@@ -27,11 +27,11 @@ do
 done
 
 # deternmine the strand direction
-if [ $3='fr' ];then
+if [ $3 = 'fr' ];then
 	strand='fr-secondstrand'
-elif [ $3='rf' ];then
+elif [ $3 = 'rf' ];then
 	strand='fr-firststrand'
-elif [ $3='un' ];then
+elif [ $3 = 'un' ];then
 	strand='fr-unstranded'
 else
 	strand='fr-unstranded'
