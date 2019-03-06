@@ -8,13 +8,15 @@ which python3 &>/dev/null || { echo "python3 not found, install python3!"; exit 
 # help message
 help(){
 	cat <<-EOF
-	adapt_trim.sh <options> <reads1>|..<reads2> 
-	Trim adapter sequences from fastq files with cutadapt@python3
-	-p Prefix of output
-	-t Threads (1 default)
-	-s Single-end mod (Paired-end default)
-	-n Nextera adapters (Trueseq default)
-	-h Print this help message
+  adapt_trim.sh <options> <reads1>|..<reads2> 
+  Trim adapter sequences from fastq files with cutadapt@python3.
+  Trimmed and gzipped fastq will be store in current (./) directory.
+  Options:
+    -p Prefix of output
+    -t Threads (1 default)
+    -s Single-end mod (Paired-end default)
+    -n Nextera adapters (Trueseq default)
+    -h Print this help message
 EOF
 	exit 0
 }
