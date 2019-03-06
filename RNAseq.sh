@@ -18,8 +18,7 @@ fi
 
 STAR_map(){
 	# fastqc control
-	fastqc -f fastq -t $threads -o logs $1 
-	fastqc -f fastq -t $threads -o logs $2
+	fastqc -f fastq -t $threads -o logs $1 $2
 
 	# cutadapt--trim adaptors Trueseq index
 	# python3 version required for -j
@@ -31,7 +30,7 @@ STAR_map(){
 }
 
 
-files=(*fasq.gz)
+files=(*fastq.gz)
 for (( i=0; i<${#files[@]} ; i+=2 ))
 do
 	prefix=${files[i]%_R1*}
