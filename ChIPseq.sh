@@ -9,6 +9,7 @@ which fastqc &>/dev/null || { echo "fastqc not found!"; exit 1; }
 which samtools &>/dev/null || { echo "samtools not found!"; exit 1; }
 which bedtools &>/dev/null || { echo "bedtools not found!"; exit 1; }
 which bedGraphToBigWig &>/dev/null || { echo "bedGraphToBigWig not found!"; exit 1; }
+which bedItemOverlapCount &>/dev/null || { echo "bedItemOverlapCount not found!"; exit 1; }
 
 #### DEFAULT CONFIGURATION ###
 # default Paired-end mod
@@ -26,7 +27,8 @@ bwaindex_hg19='/home/quanyi/genome/hg19/BWAindex/hg19bwa'
 # help message
 help(){
 	cat <<-EOF
-	ChIPseq.sh <options> <reads1>|..<reads2> 
+	Usage: ChIPseq.sh <options> <reads1>|..<reads2> 
+	QC fastq files and align to hg19/GRCh37 using BWA, convert to filtered BAM/BED and bigwig format. 
 	-i BWA index PATH
 	-p Prefix of output
 	-t Threads (1 default)
