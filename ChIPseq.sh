@@ -111,7 +111,7 @@ sam_bam_bed(){
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
 		# clean
-		rm ${1}.bam ${1}_rm.bam
+		rm ${1}_rm.bam
 	# paired-end CMD
 	else
 		# download picard.jar for PE duplicates removal
@@ -130,10 +130,11 @@ sam_bam_bed(){
 		# bam2bedpe
 		bamToBed -bedpe -i ${1}.bam2 > ${1}.bedpe
 		# bedpe to standard PE bed for macs2 peak calling (-f BEDPE)
-		cut -f1,2,6 ${1}.bedpe > $3_pe.bed
+		cut -f1,2,6 ${1}.bedpe > ${1}_pe.bed
 		# clean
-		rm ${1}.bam2 ${1}.bedpe picard.jar
+		rm ${1}_srt.bam ${1}.bam2 ${1}.bedpe picard.jar
 	fi
+	rm ${1}.bam ${1}.sam
 }
 
 # no ARGs error
@@ -173,21 +174,25 @@ if [ -z $prefix ];then
 fi
 
 # main
-if [ ! -d logs ]
-then 
-mkdir logs
-fi
+main(){
+	if [ ! -d logs ]
+	then 
+	mkdir logs
+	fi
 
-if [ ! -d fastqc ]
-then 
-mkdir fastqc
-fi 
+	if [ ! -d fastqc ]
+	then 
+	mkdir fastqc
+	fi 
+	
+	QC_mapping $mod $alg $prefix $1 $2
 
-QC_mapping $mod $alg $prefix $1 $2
+	sam_bam_bed $prefix $mod
 
-sam_bam_bed $prefix $mod
+	bam2bigwig $prefix ${prefix}_filtered.bam
+}
 
-bam2bigwig $prefix ${prefix}_filtered.bam
+main $1 $2
 
 # check running status
 if [ $? -ne 0 ]; then
