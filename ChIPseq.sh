@@ -78,20 +78,19 @@ QC_mapping(){
 
 # Convert BAM to BigWig
 bam2bigwig(){
-	#create bed from bam, requires bedtools bamToBed
+	# create bed from bam, requires bedtools bamToBed
 	bamToBed -i $2 -split > ${1}_se.bed
 	# get chromasome length
 	curl -s ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/chromInfo.txt.gz | gunzip -c > hg19_len
-	#create plus and minus strand bedgraph
+	# create plus and minus strand bedgraph
 	cat ${1}_se.bed | sort -k1,1 | bedItemOverlapCount hg19 -chromSize=hg19_len stdin | sort -k1,1 -k2,2n > accepted_hits.bedGraph
-
+	# convert to bigwig
 	bedGraphToBigWig accepted_hits.bedGraph hg19_len ${1}.bw
-	
-	#removing intermediery files
+	# removing intermediery files
 	rm accepted_hits.bedGraph hg19_len
 }
 
-# Convert BAM to BED (SE+PE)
+# SAM2BAM and filtering to BED
 sam2bed(){
 	# sam2bam+sort
 	samtools view -b -@ $threads -o ${1}.bam ${1}.sam 
@@ -107,8 +106,6 @@ sam2bed(){
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
-		# bam2bigwig	, keep SE bed
-		bam2bigwig $1 ${1}_filtered.bam
 		#clean
 		rm ${1}.bam ${1}_rm.bam
 	# paired-end CMD
@@ -124,8 +121,6 @@ sam2bed(){
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
-		# bam2bigwig, keep SE bed
-		bam2bigwig $1 ${1}_filtered.bam
 		# sort bam by query name for bedpe 
 		samtools sort -n -@ $threads -o ${1}.bam2 ${1}_filtered.bam
 		# bam2bedpe
@@ -187,6 +182,8 @@ fi
 QC_mapping $mod $alg $prefix $1 $2
 
 sam2bed $prefix $mod
+
+bam2bigwig $prefix ${prefix}_filtered.bam
 
 # check running status
 if [ $? -ne 0 ]; then
