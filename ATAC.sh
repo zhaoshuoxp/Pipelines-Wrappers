@@ -28,7 +28,7 @@ help(){
 	cat <<-EOF
   Usage: ATAC.sh <options> <reads1>|..<reads2> 
   Paired-end fastq files with _R1/2 extension are required,
-  This scripts will QC fastq files and align to hg19/GRCh37 using Bowtie2, 
+  This script will QC fastq files and align to hg19/GRCh37 using Bowtie2, 
   convert to filtered BAM/BED and bigwig format,
   then call peaks with MACS2 in BEDPE mode after Tn5 shifting,
   All results will be store in current (./) directory.
@@ -156,8 +156,7 @@ blacklist_filter(){
 }
 
 # no ARGs error
-if [ $# -lt 1 ]
-then
+if [ $# -lt 1 ];then
 	help
 	exit 1
 fi
@@ -191,19 +190,16 @@ fi
 
 # main
 main(){
-	if [ ! -d logs ]
-	then 
-	mkdir logs
+	if [ ! -d logs ];then 
+		mkdir logs
 	fi
 
-	if [ ! -d fastqc ]
-	then 
-	mkdir fastqc
+	if [ ! -d fastqc ];then 
+		mkdir fastqc
 	fi 
 
-	if [ ! -d macs2 ]
-	then 
-	mkdir macs2
+	if [ ! -d macs2 ];then 
+		mkdir macs2
 	fi 
 
 	QC_mapping $mod $prefix $1 $2
