@@ -29,7 +29,7 @@ help(){
 	cat <<-EOF
   Usage: ChIPseq.sh <options> <reads1>|..<reads2> 
   Single-end or Paired-end fastq files with _R1/2 extension are required,
-  This scripts will QC fastq files and align to hg19/GRCh37 using BWA, 
+  This script will QC fastq files and align to hg19/GRCh37(depends on index and GTF provided) using BWA, 
   convert to filtered BAM/BED and bigwig format but DOES NOT call peaks,
   All results will be store in current (./) directory.
   Options:
@@ -138,8 +138,7 @@ sam_bam_bed(){
 }
 
 # no ARGs error
-if [ $# -lt 1 ]
-then
+if [ $# -lt 1 ];then
 	help
 	exit 1
 fi
@@ -175,14 +174,12 @@ fi
 
 # main
 main(){
-	if [ ! -d logs ]
-	then 
-	mkdir logs
+	if [ ! -d logs ];then 
+		mkdir logs
 	fi
 
-	if [ ! -d fastqc ]
-	then 
-	mkdir fastqc
+	if [ ! -d fastqc ];then 
+		mkdir fastqc
 	fi 
 	
 	QC_mapping $mod $alg $prefix $1 $2
