@@ -15,7 +15,7 @@ help(){
     -p Prefix of output
     -t Threads (1 default)
     -s Single-end mod (Paired-end default)
-    -n Nextera adapters (Trueseq default)
+    -n Nextera adapters (Truseq default)
     -h Print this help message
 EOF
 	exit 0
