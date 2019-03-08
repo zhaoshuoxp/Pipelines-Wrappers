@@ -137,14 +137,12 @@ peak_calling(){
 		# broad peak calling
 		cd macs2
 		macs2 callpeak -t ../${2}_shift_se.bed -g hs -n ${2} -f BED --keep-dup all --broad -B --SPMR --nomodel --shift -37 --extsize 73
-		cd ..
 	else
 		# Tn5 shift in PE mode
 		awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4}else if($9=="-"){if($2>=5){print $1,$2-5,$6-5}else if($6>5){print $1,0,$6-5}}}' ${2}_pe.bed > ${2}_shift.bed
 		# broad peak calling
 		cd macs2
 		macs2 callpeak -t ../${2}_shift.bed -g hs -n ${2} -f BEDPE --keep-dup all --broad -B --SPMR 
-		cd ..
 	fi
 }
 
@@ -153,6 +151,7 @@ blacklist_filter(){
 	curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz | gunzip -c > bklt_hg19
 	intersectBed -v -a ${1}_peaks.broadPeak -b bklt_hg19 > ${1}_broad_filtered.bed
 	rm bklt_hg19
+	cd ..
 }
 
 # no ARGs error
@@ -198,15 +197,15 @@ main(){
 		mkdir fastqc
 	fi 
 
-	if [ ! -d macs2 ];then 
-		mkdir macs2
-	fi 
-
 	QC_mapping $mod $prefix $1 $2
 
 	sam_bam_bed $prefix $mod
 
 	bam2bigwig $prefix ${prefix}_filtered.bam
+	
+	if [ ! -d macs2 ];then 
+		mkdir macs2
+	fi 
 
 	peak_calling $mod $prefix
 
