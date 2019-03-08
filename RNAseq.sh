@@ -111,7 +111,7 @@ main(){
 		path=${files[i]##*/}
 		prefix=${path%_R1*}
 		STAR_map ${files[i]} ${files[i+1]} $prefix
-		bam=${bam}" "${$prefix}.bam
+		bam=${bam}" "${prefix}.bam
 	done 
 
 	featureCounts -a $gtf -g gene_name -T $threads -p -t exon -g gene_name -o count.txt $bams
