@@ -141,7 +141,7 @@ main(){
 		#write.table(res, "DEG.txt")
 		resdata <- merge(as.data.frame(res), as.data.frame(counts(dds, normalized=TRUE)),by="row.names",sort=FALSE)
 		names(resdata)[names(resdata)=="Row.names"]="Genes"
-		write.table(resdata, "all_genes_exp.txt", row.names=F, sep="\t",quote=F)
+		write.table(resdata, "all_genes_exp.txt", row.names=F, sep="\t", quote=F)
 
 	}else{
 		stop("Sample names in conditions.txt don't match featureCount output!")	
