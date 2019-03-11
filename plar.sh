@@ -1,7 +1,6 @@
 #!/bin/bash
 #####################################
 # Usage:  plar.sh OUTPUTDIR labelC1,labelC2.. fr|rf|un(null) C1_rep1.gtf C1_rep2.gtf.. C2_rep1.gtf C2_rep2.gtf.. C1_rep1.bam,C1_rep2.bam.. C2_rep1.bam,C2_rep2.bam..      #
-# Manual:                           #
 #####################################
 # setup PATH
 output_dir=$1
