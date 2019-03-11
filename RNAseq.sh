@@ -114,14 +114,14 @@ main(){
 		bam=${bam}" "${prefix}.bam
 	done 
 
-	featureCounts -a $gtf -g gene_name -T $threads -p -t exon -g gene_name -o count.txt $bams
+	featureCounts -a $gtf -g gene_name -T $threads -p -t exon -o count.txt $bam
 	
 	cat >deseq.r<<-EOF
 	#!/usr/bin/env Rscript
 	library("DESeq2")
 	options<-commandArgs(trailingOnly = T)
 	
-	data <- read.table(options[1], header=T, quote="\t", skip=1)
+	data <- read.table(options[1], header=T, quote="\t", check.names=F, skip=1)
 	SampCond <- read.table(options[2], header=T, quote="\t")
 
 	names(data)[7:ncol(data)] ->sample
