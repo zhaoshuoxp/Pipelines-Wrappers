@@ -1,3 +1,4 @@
+#!/bin/bash
 picard=/software/picard-tools/1.92
 gatk=/usr/bin/GenomeAnalysisTK.jar
 hg19=/srv/persistent/bliu2/shared/ucsc_hg19/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/genome.fa
