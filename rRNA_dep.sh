@@ -1,7 +1,6 @@
 #!/bin/bash
 #####################################
-# Usage:                            #
-# Manual:                           #
+# Usage: rRNA_dep.sh <reads1> <reads2> <prefix of output>
 #####################################
 #rRNA genes BWA index generation
 hisat2_rRNA_idx(){
