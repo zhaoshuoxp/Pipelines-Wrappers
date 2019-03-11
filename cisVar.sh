@@ -1,7 +1,6 @@
 #!/bin/bash
 #####################################
-# Usage:                            #
-# Manual:                           #
+# Usage: cisVar.sh <read depth> <individual file>
 #####################################
 #Check
 which cisVar &>/dev/null || { echo "cisVar not found! Install: sudo pip3 install cisVar"; exit 1; }
