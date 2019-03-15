@@ -16,7 +16,7 @@ which bedItemOverlapCount &>/dev/null || { echo "bedItemOverlapCount not found!"
 mod='pe'
 # default BWA mem algorithm
 alg='mem'
-# default TrueSeq adapters
+# default TruSeq adapters
 aA='AGATCGGAAGAGC'
 gG='GCTCTTCCGATCT'
 # default 1 core to run
