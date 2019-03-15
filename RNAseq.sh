@@ -10,7 +10,7 @@ which featureCounts &>/dev/null || { echo "fastqc not found!"; exit 1; }
 
 #### DEFAULT CONFIGURATION #### 
 
-# default TrueSeq adapters
+# default TruSeq adapters
 aA='AGATCGGAAGAGC'
 gG='GCTCTTCCGATCT'
 # default 1 core to run
@@ -50,7 +50,7 @@ EOF
 STAR_map(){
 	# fastqc control
 	fastqc -f fastq -t $threads -o logs $1 $2
-	# cutadapt--trim adaptors Trueseq index
+	# cutadapt--trim adaptors Truseq index
 	# python3 version required for -j
 	cutadapt -m 30 -j $threads -a $aA -A $aA -g $gG -G $gG -o ${3}_R1_trimmed.gz -p ${3}_R2_trimmed.gz $1 $2 > ./logs/${3}_cutadapt.log
 	# set open file limit for STAR BAM sorting 
