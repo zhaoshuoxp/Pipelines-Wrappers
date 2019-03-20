@@ -23,7 +23,7 @@ gtf='/home/quanyi/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf'
 help(){
 	cat <<-EOF
   Usage: RNAseq.sh <options> -c conditions.txt <PATH/contains/fastq> 
-  Paired-end fastq files with .fastq.gz extension, and a text file discribing samples per conditon are required, 
+  !!!Paired-end fastq files with _R1/2.fastq.gz extension, and a text file discribing samples per conditon are required!!!
   This script will QC fastq files and align to hg19/GRCh37(depends on index and GTF provided) using STAR, 
   featureCounts and DESeq2 will be used for reads count and differntial expresss genes discovery,
   All results will be store in current (./) directory.
@@ -36,7 +36,7 @@ help(){
     -n Nextera adapters (Truseq default)
     -h Print this help message
   NOTE:
-    1) !!GIVE PATH(DIRECTORY) of fastq files ONLY!!
+    1) !!!GIVE PATH(DIRECTORY) of fastq files ONLY!!!
     2) Sample names in conditions.txt must be shown without _R1/2.fastq.gz extension,
  	The order of the samples has to the same as in command: ls -1 for the script to work,
     You may use this script to prepare the conditions.txt:
@@ -108,8 +108,8 @@ main(){
 	files=($1/*fastq.gz)
 	for (( i=0; i<${#files[@]} ; i+=2 ))
 	do
-		path=${files[i]##*/}
-		prefix=${path%_R1*}
+		filename=${files[i]##*/}
+		prefix=${filename%_R1*}
 		STAR_map ${files[i]} ${files[i+1]} $prefix
 		bam=${bam}" "${prefix}.bam
 	done 
