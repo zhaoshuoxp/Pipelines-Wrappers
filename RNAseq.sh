@@ -35,7 +35,7 @@ help(){
     -i [str] STAR index PATH
     -g [str] Reference GTF transcripts PATH
     -t [int] Threads (1 default)
-	-p prepare condition.txt
+    -p prepare condition.txt
     -n Nextera adapters (Truseq default)
     -h Print this help message
 
