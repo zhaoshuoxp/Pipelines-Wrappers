@@ -28,14 +28,17 @@ bwaindex_hg19='/home/quanyi/genome/hg19/BWAindex/hg19bwa'
 help(){
 	cat <<-EOF
   Usage: ChIPseq.sh <options> <reads1>|..<reads2> 
-  Single-end or Paired-end fastq files with _R1/2 extension are required,
+
+  ### INPUT: Single-end or Paired-end fastq files with _R1/2 extension ###
   This script will QC fastq files and align to hg19/GRCh37(depends on index and GTF provided) using BWA, 
   convert to filtered BAM/BED and bigwig format but DOES NOT call peaks,
   All results will be store in current (./) directory.
+  ### python3/cutadapt/fastqc/bwa/samtools/bedtools/bedGraphToBigWig/bedItemOverlapCount required ###
+
   Options:
-    -i BWA index PATH
-    -p Prefix of output
-    -t Threads (1 default)
+    -i [str] BWA index PATH
+    -p [str] Prefix of output
+    -t [int] Threads (1 default)
     -s Single-end mod (Paired-end default)
     -a Use BWA aln algorithm (BWA mem default)
     -h Print this help message

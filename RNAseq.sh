@@ -22,27 +22,31 @@ gtf='/home/quanyi/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf'
 # help message
 help(){
 	cat <<-EOF
-  Usage: RNAseq.sh <options> -c conditions.txt <PATH/contains/fastq> 
-  !!!Paired-end fastq files with _R1/2.fastq.gz extension, and a text file discribing samples per conditon are required!!!
+  Usage: RNAseq.sh <options> -c conditions.txt </PATH/contains/fastq> 
+
+  ### INPUT: Paired-end fastq files with _R1/2.fastq.gz extension, and a text file discribing samples per conditon ###
   This script will QC fastq files and align to hg19/GRCh37(depends on index and GTF provided) using STAR, 
   featureCounts and DESeq2 will be used for reads count and differntial expresss genes discovery,
   All results will be store in current (./) directory.
+  ### python3/cutadapt/fastqc/STAR/R/featureCounts/DEseq2 required ###
+
   Options:
-    -c conditions.txt
-    -i STAR index PATH
-    -g Reference GTF transcripts
-    -p prepare condition.txt 
-    -t Threads (1 default)
+    -c [str] /PATH/to/conditions.txt
+    -i [str] STAR index PATH
+    -g [str] Reference GTF transcripts PATH
+    -t [int] Threads (1 default)
+	-p prepare condition.txt
     -n Nextera adapters (Truseq default)
     -h Print this help message
+
   NOTE:
-    1) !!!GIVE PATH(DIRECTORY) of fastq files ONLY!!!
+    1) ### GIVE PATH(DIRECTORY) of fastq files ONLY ###
     2) Sample names in conditions.txt must be shown without _R1/2.fastq.gz extension,
  	The order of the samples has to the same as in command: ls -1 for the script to work,
     You may use this script to prepare the conditions.txt:
-      RNAseq.sh -p <PATH/contains/fastq> 
+      RNAseq.sh -p </PATH/contains/fastq> 
     Then edit conditions.txt in current directory by adding condition names in 2nd column,
-    Provide this text to the script by -c conditions.txt.
+    Provide this text to the script by <-c conditions.txt>.
 EOF
 	exit 0
 }
