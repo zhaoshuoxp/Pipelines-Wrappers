@@ -29,7 +29,7 @@ help(){
   Usage: ATAC.sh <options> <reads1>|..<reads2> 
 
   ### INPUT: Paired-end fastq files with _R1/2 extension ###
-  This script will QC fastq files and align to hg19/GRCh37 using Bowtie2, 
+  This script QC fastq files and align reads to hg19/GRCh37 using Bowtie2, 
   convert to filtered BAM/BED and bigwig format,
   then call peaks with MACS2 in BEDPE mode after Tn5 shifting,
   All results will be store in current (./) directory.

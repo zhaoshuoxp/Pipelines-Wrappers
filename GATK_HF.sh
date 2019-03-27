@@ -4,6 +4,10 @@ reads1=$1
 reads2=$2
 picard=/home/quanyi/app/picard.jar
 gatk=/home/quanyi/app/GenomeAnalysisTK/GenomeAnalysisTK.jar
+hg19=/home/quanyi/genome/hg19/GRCh37.p13.genome.fa
+gatk_bundle_hg19=
+bwaindex_hg19=home/quanyi/genome/hg19/BWAindex/
+gatk_ref_hg19=
 #
 cutadapt -f fastq -m 30 -a AGATCGGAAGAGC -A AGATCGGAAGAGC -o R1_trimmed.gz -p R2_trimmed.gz $reads1 $reads2 
 
