@@ -4,7 +4,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
  * ATACseq.sh: bulk ATACseq pipeline, from fastq to open chromatin regions.
  * ChIPseq.sh: ChIPseq pipeline, from fastq to peak calling step.
- * RNAseq.sh: bulk ATACseq pipeline, from fastq to differential expression genes.
+ * RNAseq.sh: bulk RNAseq pipeline, from fastq to differential expression genes.
  * adapt_trim.sh: adapter trimming function, seperated from the above pipelines.
  * cisVar.sh: pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
  * GATK_HF.sh: variants calling by [GATK](https://software.broadinstitute.org/gatk/), from fastq to vcf.
