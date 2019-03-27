@@ -330,5 +330,5 @@ All results will be store in current (./) directory.
 * GVCF and VCF
 
 ------
-Auther [@zhaoshuoxp](https://github.com/zhaoshuoxp)  
+Author [@zhaoshuoxp](https://github.com/zhaoshuoxp)  
 Mar 27 2019  
