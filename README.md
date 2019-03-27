@@ -19,7 +19,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
 ### ATACseq.sh
 
-This script will QC fastq files and align to hg19/GRCh37 using Bowtie2, convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting. All results will be store in current (./) directory.
+This script will QC fastq files and align to hg19/GRCh37 using Bowtie2, convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting. 
 
 #### Input
 Paired-end fastq files with _R1/2 extension, ex:test_R1.fastq.gz, test_R2.fastq.gz 
@@ -43,8 +43,25 @@ help message can be shown by `ATACseq.sh -h`
     ./ATACseq.sh -i /path/to/bwt2idx/ -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 
 ####  Output
-
+All results will be store in current (./) directory.
 * ${prefix}_trimmed_R1/2.fastq.gz: adapter trimmed fastq files.
 * ${prefix}_mkdup.bam: all alignments, with duplicates marked.
 * ${prefix}_filtered.bam: useful filtered alignments; duplicates, unpaired, unmapped, low-quality, secondary, chrM reads removed.
-* 
+* ${prefix}_se.bed: useful filtered alignments in BED format.
+* ${prefix}_pe.bed: useful filtered alignments in BEDPE format, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome.
+* ${prefix}.bw: bigwig file converted from ${prefix}_se.bed, can be upload to genome browser for visualization.
+* ${prefix}_shift.bed: Tn5 shifted BEDPE format, it will be used for macs2 peak calling.
+* macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will bed called by defualt. In addtion, ${prefix}_broad_filtered.bed is the peaks file with hg19 blacklist filtering.
+
+
+
+
+
+
+------
+
+Auther [@zhaoshuoxp](https://github.com/zhaoshuoxp)  
+Mar 27 2019  
+
+
+
