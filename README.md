@@ -16,7 +16,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
 > Python3, cutadapt, macs2(>=2.1.1), R, DESeq2, featureCounts, bowtie2, bwa,STAR, fastqc, samtools, bedtools, bedGraphToBigWig, bedItemOverlapCount
 
 -----
-### ATACseq.sh
+## ATACseq.sh
 
 This script QC fastq files and align reads to hg19/GRCh37 using Bowtie2, convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting. 
 
@@ -58,7 +58,7 @@ All results will be store in current (./) directory.
 
 ----- 
 
-### ChIPseq.sh
+## ChIPseq.sh
 
 This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using BWA, convert to filtered BAM/BED and bigwig format but DOES NOT call peaks.
 
@@ -114,7 +114,7 @@ See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) an
 
 -----
 
-### RNAseq.sh
+## RNAseq.sh
 
 This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using STAR, featureCounts and DESeq2 will be used for reads count and differntial expresssion genes discovery.
 
@@ -184,7 +184,7 @@ All results will be store in current (./) directory.
  This script cannot compare the DE genes condition by condition automatically if you have >2 conditions to compare. Either edit deseq.r or load count.txt to R. A online tool can be used [iDEP](http://bioinformatics.sdstate.edu/idep/).
 
 -----
-### adapt_trim.sh
+## adapt_trim.sh
 
 This script is seperated from ChIPseq.sh, it trims adapter sequences from fastq files with cutadapt@python3.
 
@@ -217,7 +217,7 @@ All results will be store in current (./) directory.
 * test_R1/2_trimmed.gz: adapter trimmed fastq files.
 
 ------
-### trans_assemble.sh
+## trans_assemble.sh
 
 This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using HISAT2. *De novo* transcripts assembly will be performed by stingtie.
 
@@ -239,7 +239,7 @@ All results will be store in current (./) directory.
 * logs: running logs.
 
 ------
-### cisVar.sh
+## cisVar.sh
 
 This script is a wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
 
@@ -261,30 +261,9 @@ All results will be store in current (./) directory.
 * {prefix}.{read_depth}.final.txt: mian regression output.
 * {prefix}.${DEP}.total.txt.prepost.png: desity plot of the regression output.
 
-------
-### GATK_HF.sh
+-----
 
-This script is a wrapper of variants calling by [GATK](https://software.broadinstitute.org/gatk/).
-
-#### Input
-* Paired-end fastq files.
-
-#### Usage
-
-        ./GATK_HF.sh fastq1 fastq2
-    
-> NOTE:
-Edit the script and mofiy $hg19, $picard, $gatk, $gatk_bundle_hg19, $gatk_ref_hg19 PATH.
-
-See more about [GATK Best Practices](https://software.broadinstitute.org/gatk/best-practices/).
-
-#### Output
-All results will be store in current (./) directory.
-
-* GVCF and VCF
-
-------
-### PLAR.sh
+## PLAR.sh
 
 This script is a re-wrrited wrapper of [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR).  
 > Requirements
@@ -307,7 +286,7 @@ All results will be store in current (./) directory.
 * final_lncRNA.bed: filtered and sorted lncRNAs in BED12 format.
 
 ------
-### rRNA_dep.sh
+## rRNA_dep.sh
 
 This script removes ribosomal RNA reads from fastq files by mapping them to rRNA genes and retrieving unmmaped reads.
 
@@ -327,6 +306,29 @@ All results will be store in current (./) directory.
 * {prefix}_dep_R1/2_fq.gz: rRNA removed fastq files.
 * {prefix}_rRNA.log: mapping log.
 
------
+------
+
+## GATK_HF.sh
+
+This script is a wrapper of variants calling by [GATK](https://software.broadinstitute.org/gatk/).
+
+#### Input
+* Paired-end fastq files.
+
+#### Usage
+
+    ./GATK_HF.sh fastq1 fastq2
+    
+> NOTE:
+Edit the script and mofiy $hg19, $picard, $gatk, $gatk_bundle_hg19, $gatk_ref_hg19 PATH.
+
+See more about [GATK Best Practices](https://software.broadinstitute.org/gatk/best-practices/).
+
+#### Output
+All results will be store in current (./) directory.
+
+* GVCF and VCF
+
+------
 Auther [@zhaoshuoxp](https://github.com/zhaoshuoxp)  
 Mar 27 2019  
