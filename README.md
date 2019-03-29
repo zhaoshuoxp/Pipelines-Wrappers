@@ -236,7 +236,7 @@ help message can be shown by `adapt_trim.sh -h`
 ```shell
 Usage: adapt_trim.sh <options> <reads1>|..<reads2
     Options:
-    		-p Prefix of output
+    	-p Prefix of output
         -t Threads (1 default)
         -s Single-end mod (Paired-end default)
         -n Nextera adapters (Truseq default)
