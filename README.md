@@ -15,7 +15,10 @@ This repository has the following combined shell/awk/python/R scripts which can 
 > Requirements:
 > Python3, cutadapt, macs2(>=2.1.1), R, DESeq2, featureCounts, bowtie2, bwa,STAR, fastqc, samtools, bedtools, bedGraphToBigWig, bedItemOverlapCount
 
+
+
 -----
+
 ## ATACseq.sh
 
 This script QC fastq files and align reads to hg19/GRCh37 using Bowtie2, convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting. 
@@ -50,15 +53,26 @@ chmod 755 ATACseq.sh
 All results will be store in current (./) directory.
 
 * test_trimmed_R1/2.fastq.gz: adapter trimmed fastq files.
+
 * test_mkdup.bam: all alignments, with duplicates marked.
+
 * test_filtered.bam: useful filtered alignments; duplicates, unpaired, unmapped, low-quality, secondary, chrM reads removed.
+
 * test_se.bed: useful filtered alignments in BED format.
+
 * test_pe.bed: useful filtered alignments in BEDPE format, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome.
+
 * test.bw: bigwig file converted from test_se.bed, can be upload to genome browser for visualization.
+
 * test_shift.bed: Tn5 shifted BEDPE format, it will be used for macs2 peak calling.
+
 * macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will bed called by defualt. In addtion, test_broad_filtered.bed is the peaks file with hg19 blacklist filtering.
+
 * fastqc: the report(s) of fastqc
+
 * logs: running logs
+
+  
 
 -----
 
@@ -119,6 +133,8 @@ macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test -B --SPMR
 test_se.bed and test_filtered.bam can also be used in BED or BAM mode of macs2.
 
 See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) and [SICER](https://home.gwu.edu/~wpeng/Software.htm) or [SICERpy](https://github.com/dariober/SICERpy) (for Histone Mods peak calling).
+
+
 
 -----
 
@@ -202,7 +218,10 @@ All results will be store in current (./) directory.
  Sample names in conditions.txt has to match featureCount output, check your text or generate it by the script.
  This script cannot compare the DE genes condition by condition automatically if you have >2 conditions to compare. Either edit deseq.r or load count.txt to R. A online tool can be used [iDEP](http://bioinformatics.sdstate.edu/idep/).
 
------
+
+
+----
+
 ## adapt_trim.sh
 
 This script is seperated from ChIPseq.sh, it trims adapter sequences from fastq files with cutadapt@python3.
@@ -239,6 +258,8 @@ All results will be store in current (./) directory.
 
 * test_R1/2_trimmed.gz: adapter trimmed fastq files.
 
+  
+
 ------
 ## trans_assemble.sh
 
@@ -261,8 +282,12 @@ Edit the script and mofiy $threads, $index, $gtf.
 All results will be store in current (./) directory.
 
 * {prefix}.bam: sorted accepted alignments.
+
 * {prefix}.gtf: *de novo* transcripts assembled with reference GTF guiding.
+
 * logs: running logs.
+
+  
 
 ------
 ## cisVar.sh
@@ -287,7 +312,10 @@ See more about [cisVar](https://github.com/TheFraserLab/cisVar).
 All results will be store in current (./) directory.
 
 * {prefix}.{read_depth}.final.txt: mian regression output.
+
 * {prefix}.${DEP}.total.txt.prepost.png: desity plot of the regression output.
+
+  
 
 -----
 
@@ -315,6 +343,8 @@ All results will be store in current (./) directory.
 
 * final_lncRNA.bed: filtered and sorted lncRNAs in BED12 format.
 
+  
+
 ------
 ## rRNA_dep.sh
 
@@ -337,7 +367,10 @@ Edit the script and mofiy $threads, $genome, $gtf.
 All results will be store in current (./) directory.
 
 * {prefix}_dep_R1/2_fq.gz: rRNA removed fastq files.
+
 * {prefix}_rRNA.log: mapping log.
+
+  
 
 ------
 
@@ -364,6 +397,8 @@ See more about [GATK Best Practices](https://software.broadinstitute.org/gatk/be
 All results will be store in current (./) directory.
 
 * GVCF and VCF
+
+  
 
 ------
 Author [@zhaoshuoxp](https://github.com/zhaoshuoxp)  
