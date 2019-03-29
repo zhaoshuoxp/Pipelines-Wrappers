@@ -28,19 +28,23 @@ Paired-end fastq files with **_R1/2** extension, ex:test_R1.fastq.gz, test_R2.fa
 
 help message can be shown by `ATACseq.sh -h`
 
-    Usage: ATAC.sh <options> <reads1>|..<reads2> 
-        Options:
-            -i [str] Bowtie2 index PATH
-            -p [str] Prefix of output
-            -t [int] Threads (1 default)
-            -s Single-end mod (DO NOT recommend, Paired-end default)
-            -h Print this help message
+```shell
+Usage: ATAC.sh <options> <reads1>|..<reads2> 
+    Options:
+        -i [str] Bowtie2 index PATH
+        -p [str] Prefix of output
+        -t [int] Threads (1 default)
+        -s Single-end mod (DO NOT recommend, Paired-end default)
+        -h Print this help message
+```
 
 #### Example run
 
-    wget https://github.com/zhaoshuoxp/Pipelines-Wrappers/blob/master/ATACseq.sh
-    chmod 755 ATACseq.sh
-    ./ATACseq.sh -i /path/to/bwt2idx/ -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+```shell
+wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ATACseq.sh
+chmod 755 ATACseq.sh
+./ATACseq.sh -i /path/to/bwt2idx/ -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+```
 
 ####  Output
 All results will be store in current (./) directory.
@@ -56,7 +60,7 @@ All results will be store in current (./) directory.
 * fastqc: the report(s) of fastqc
 * logs: running logs
 
------ 
+-----
 
 ## ChIPseq.sh
 
@@ -69,21 +73,23 @@ Or single-end fastq file with -p.
 #### Options
 help message can be shown by `ChIPseq.sh -h`
 
-    Usage: ChIPseq.sh <options> <reads1>|..<reads2> 
-        Options:
-            -i [str] BWA index PATH
-            -p [str] Prefix of output
-            -t [int] Threads (1 default)
-            -s Single-end mod (Paired-end default)
-            -a Use BWA aln algorithm (BWA mem default)
-            -h Print this help message
-                
-#### Example run
+```shell
+Usage: ChIPseq.sh <options> <reads1>|..<reads2> 
+    Options:
+        -i [str] BWA index PATH
+        -p [str] Prefix of output
+        -t [int] Threads (1 default)
+        -s Single-end mod (Paired-end default)
+        -a Use BWA aln algorithm (BWA mem default)
+        -h Print this help message
+```
 
-    wget https://github.com/zhaoshuoxp/Pipelines-Wrappers/blob/master/ChIPseq.sh
+#### Example run
+```shell
+    wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ChIPseq.sh
     chmod 755 ChIPseq.sh
     ./ChIPseq.sh -i /path/to/bwaidx/ -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
-
+```
 ####  Output
 All results will be store in current (./) directory.
 
@@ -104,7 +110,9 @@ All results will be store in current (./) directory.
 
 test_pe.bed (and input_pe.bed) can be used for macs2 peak calling in BEDPE mode:
 
-    macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test -B --SPMR
+```shell
+macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test -B --SPMR
+```
 
 > --broad is recommended for histone modifications when using macs2
 
@@ -123,29 +131,35 @@ This script QC fastq files and align reads to hg19/GRCh37(depends on index and G
 
 > Single-end not supported
 
-    ls -1 ./
-    cond1_rep1_R1.fastq.gz 
-    cond1_rep1_R2.fastq.gz 
-    cond1_rep2_R1.fastq.gz 
-    cond1_rep2_R2.fastq.gz
-    cond2_rep1_R1.fastq.gz 
-    cond2_rep1_R2.fastq.gz 
-    cond2_rep2_R1.fastq.gz 
-    cond2_rep2_R2.fastq.gz
+```shell
+ls -1 ./
+cond1_rep1_R1.fastq.gz 
+cond1_rep1_R2.fastq.gz 
+cond1_rep2_R1.fastq.gz 
+cond1_rep2_R2.fastq.gz
+cond2_rep1_R1.fastq.gz 
+cond2_rep1_R2.fastq.gz 
+cond2_rep2_R1.fastq.gz 
+cond2_rep2_R2.fastq.gz
+```
 
 And a text file discribing samples per conditon ex:
 
-    sample  condition
-    cond1_rep1  cond1
-    cond1_rep2  cond1
-    cond2_rep1  cond2
-    cond2_rep2  cond2
+```shell
+sample  condition
+cond1_rep1  cond1
+cond1_rep2  cond1
+cond2_rep1  cond2
+cond2_rep2  cond2
+```
 
 You can use the script to scan fastq files and generate the text file:
 
-    wget https://github.com/zhaoshuoxp/Pipelines-Wrappers/blob/master/RNAseq.sh
-    chmod 755 RNAseq.sh 
-    ./RNAseq.sh -p /path/to/directory/contains/fastq/
+```shell
+wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/RNAseq.sh
+chmod 755 RNAseq.sh 
+./RNAseq.sh -p /path/to/directory/contains/fastq/
+```
 then the condition.txt will be created and open with VIM. sample column will have been filled, edit the text by adding the condition information on 2nd column.
 
 > NOTE:
@@ -154,21 +168,26 @@ then the condition.txt will be created and open with VIM. sample column will hav
 #### Options
 help message can be shown by `RNAseq.sh -h`
 
-    Usage: RNAseq.sh <options> -c conditions.txt /PATH/to/directoy/contains/fastq/ 
-        Options:
-            -c [str] /PATH/to/conditions.txt
-            -i [str] STAR index PATH
-            -g [str] Reference GTF transcripts PATH
-            -t [int] Threads (1 default)
-            -p prepare condition.txt
-            -n Nextera adapters (Truseq default)
-            -h Print this help message
-                
+```shell
+Usage: RNAseq.sh <options> -c conditions.txt /PATH/to/directoy/contains/fastq/ 
+    Options:
+        -c [str] /PATH/to/conditions.txt
+        -i [str] STAR index PATH
+        -g [str] Reference GTF transcripts PATH
+        -t [int] Threads (1 default)
+        -p prepare condition.txt
+        -n Nextera adapters (Truseq default)
+        -h Print this help message
+```
+
 #### Example run
 
-    ./RNAseq.sh -i /path/to/STARidx/ -g /path/to/ref/GTF -c conditions.txt -t 24 /path/to/directory/contains/fastq/
+```shell
+./RNAseq.sh -i /path/to/STARidx/ -g /path/to/ref/GTF -c conditions.txt -t 24 /path/to/directory/contains/fastq/
+```
 
 ####  Output
+
 All results will be store in current (./) directory.
 
 * {prefix}_R1/2_trimmed.gz: adapter trimmed fastq files.
@@ -194,20 +213,24 @@ This script is seperated from ChIPseq.sh, it trims adapter sequences from fastq 
 #### Options
 help message can be shown by `adapt_trim.sh -h`
 
-    Usage: adapt_trim.sh <options> <reads1>|..<reads2
-        Options:
-                -p Prefix of output
-                        -t Threads (1 default)
-                        -s Single-end mod (Paired-end default)
-                        -n Nextera adapters (Truseq default)
-                        -h Print this help message
-                
+```shell
+Usage: adapt_trim.sh <options> <reads1>|..<reads2
+    Options:
+            -p Prefix of output
+                    -t Threads (1 default)
+                    -s Single-end mod (Paired-end default)
+                    -n Nextera adapters (Truseq default)
+                    -h Print this help message
+```
+
 #### Example run
 
-    wget https://github.com/zhaoshuoxp/Pipelines-Wrappers/blob/master/adapt_trim.sh
-    chmod 755 adapt_trim.sh 
-    ./adapt_trim.sh -p test -t 24 test_R1.fastq.gz test_R2.fastq.gz
-    
+```shell
+wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/adapt_trim.sh
+chmod 755 adapt_trim.sh 
+./adapt_trim.sh -p test -t 24 test_R1.fastq.gz test_R2.fastq.gz
+```
+
 > NOTE:
 multi-threads support only works with python3>=3.4, multiprocessing>=0.70, cutadapt>=1.15 and pigz
 
@@ -226,12 +249,15 @@ This script QC fastq files and align reads to hg19/GRCh37(depends on index and G
 
 #### Usage
 
-    ./trans_assemble.sh <reads1> <reads2> <prefix of output> <starnd: fr|rf|un>
-    
+```shell
+./trans_assemble.sh <reads1> <reads2> <prefix of output> <starnd: fr|rf|un>
+```
+
 > NOTE:
 Edit the script and mofiy $threads, $index, $gtf.
 
 #### Output
+
 All results will be store in current (./) directory.
 
 * {prefix}.bam: sorted accepted alignments.
@@ -248,8 +274,10 @@ This script is a wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
 
 #### Usage
 
-    ./cisVar.sh hornet.bam <read_depth> <indivdual files>
-    
+```shell
+./cisVar.sh hornet.bam <read_depth> <indivdual files>
+```
+
 > NOTE:
 Edit the script and mofiy $vcf PATH to your SNP vcf files.
 
@@ -274,8 +302,10 @@ stringtie, cuffdiff, plar, CPC2 and HMMER
 
 #### Usage
 
-    ./PLAR.sh hornet.bam <output dir> <prefix_sample1,prefix_sample2...> <strand:rf|fr|un> <sample1_rep1.gtf> <sample1_rep2.gtf> <sample2_rep1.gtf> ... <sample1_rep1.bam,sample1_rep2.bam,sample2_rep1..>
-    
+```shell
+./PLAR.sh hornet.bam <output dir> <prefix_sample1,prefix_sample2...> <strand:rf|fr|un> <sample1_rep1.gtf> <sample1_rep2.gtf> <sample2_rep1.gtf> ... <sample1_rep1.bam,sample1_rep2.bam,sample2_rep1..>
+```
+
 > NOTE:
 Edit the script and mofiy $plar_path, $cpc2_path.
 Addtional annotation files required in $plar_path, see [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR) for nore details.
@@ -295,12 +325,15 @@ This script removes ribosomal RNA reads from fastq files by mapping them to rRNA
 
 #### Usage
 
-    ./rRNA_dep.sh <reads1> <reads2> <prefix of output>
-    
+```shell
+./rRNA_dep.sh <reads1> <reads2> <prefix of output>
+```
+
 > NOTE:
 Edit the script and mofiy $threads, $genome, $gtf.
 
 #### Output
+
 All results will be store in current (./) directory.
 
 * {prefix}_dep_R1/2_fq.gz: rRNA removed fastq files.
@@ -317,14 +350,17 @@ This script is a wrapper of variants calling by [GATK](https://software.broadins
 
 #### Usage
 
-    ./GATK_HF.sh fastq1 fastq2
-    
+```shell
+./GATK_HF.sh fastq1 fastq2
+```
+
 > NOTE:
 Edit the script and mofiy $hg19, $picard, $gatk, $gatk_bundle_hg19, $gatk_ref_hg19 PATH.
 
 See more about [GATK Best Practices](https://software.broadinstitute.org/gatk/best-practices/).
 
 #### Output
+
 All results will be store in current (./) directory.
 
 * GVCF and VCF
