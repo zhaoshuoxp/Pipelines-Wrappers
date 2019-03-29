@@ -41,7 +41,7 @@ Usage: ATAC.sh <options> <reads1>|..<reads2>
         -h Print this help message
 ```
 
-#### Example run
+#### Example
 
 ```shell
 wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ATACseq.sh
@@ -98,7 +98,8 @@ Usage: ChIPseq.sh <options> <reads1>|..<reads2>
         -h Print this help message
 ```
 
-#### Example run
+#### Example
+
 ```shell
     wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ChIPseq.sh
     chmod 755 ChIPseq.sh
@@ -143,7 +144,7 @@ See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) an
 This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using STAR, featureCounts and DESeq2 will be used for reads count and differntial expresssion genes discovery.
 
 #### Input
-* Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directoy, ex:
+* Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directoy, e.g.
 
 > Single-end not supported
 
@@ -159,7 +160,7 @@ cond2_rep2_R1.fastq.gz
 cond2_rep2_R2.fastq.gz
 ```
 
-And a text file discribing samples per conditon ex:
+And a text file discribing samples per conditon e.g.
 
 ```shell
 sample  condition
@@ -196,7 +197,7 @@ Usage: RNAseq.sh <options> -c conditions.txt /PATH/to/directoy/contains/fastq/
         -h Print this help message
 ```
 
-#### Example run
+#### Example
 
 ```shell
 ./RNAseq.sh -i /path/to/STARidx/ -g /path/to/ref/GTF -c conditions.txt -t 24 /path/to/directory/contains/fastq/
@@ -227,7 +228,7 @@ All results will be store in current (./) directory.
 This script is seperated from ChIPseq.sh, it trims adapter sequences from fastq files with cutadapt@python3.
 
 #### Input
-* Paired-end fastq files or single-end with -s, ex: test_R1.fastq.gz test_R2.fastq.gz
+* Paired-end fastq files or single-end with -s, e.g. test_R1.fastq.gz test_R2.fastq.gz
 
 #### Options
 help message can be shown by `adapt_trim.sh -h`
@@ -235,14 +236,14 @@ help message can be shown by `adapt_trim.sh -h`
 ```shell
 Usage: adapt_trim.sh <options> <reads1>|..<reads2
     Options:
-            -p Prefix of output
-                    -t Threads (1 default)
-                    -s Single-end mod (Paired-end default)
-                    -n Nextera adapters (Truseq default)
-                    -h Print this help message
+				-p Prefix of output
+        -t Threads (1 default)
+        -s Single-end mod (Paired-end default)
+        -n Nextera adapters (Truseq default)
+        -h Print this help message
 ```
 
-#### Example run
+#### Example
 
 ```shell
 wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/adapt_trim.sh
