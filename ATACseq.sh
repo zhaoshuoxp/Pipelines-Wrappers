@@ -124,10 +124,8 @@ sam_bam_bed(){
 		samtools sort -n -@ $threads -o ${1}.bam2 ${1}_filtered.bam
 		# bam2bedpe
 		bamToBed -bedpe -i ${1}.bam2 > ${1}.bedpe
-		# bedpe to standard PE bed for macs2 peak calling (-f BEDPE)
-		cut -f1,2,6 ${1}.bedpe > ${1}_pe.bed
 		# clean
-		rm ${1}_srt.bam ${1}.bam2 ${1}.bedpe picard.jar 
+		rm ${1}_srt.bam ${1}.bam2 picard.jar 
 	fi
 	rm ${1}.bam ${1}.sam ${1}_chrM.bam 
 }
@@ -142,7 +140,7 @@ peak_calling(){
 		macs2 callpeak -t ../${2}_shift_se.bed -g hs -n ${2} -f BED --keep-dup all --broad -B --SPMR --nomodel --shift -37 --extsize 73
 	else
 		# Tn5 shift in PE mode
-		awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4}else if($9=="-"){if($2>=5){print $1,$2-5,$6-5}else if($6>5){print $1,0,$6-5}}}' ${2}_pe.bed > ${2}_shift.bed
+		awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4}else if($9=="-"){if($2>=5){print $1,$2-5,$6-5}else if($6>5){print $1,0,$6-5}}}' ${2}.bedpe > ${2}_shift.bed
 		# broad peak calling
 		cd macs2
 		macs2 callpeak -t ../${2}_shift.bed -g hs -n ${2} -f BEDPE --keep-dup all --broad -B --SPMR 
