@@ -3,15 +3,15 @@
 -----
 This repository has the following combined shell/awk/python/R scripts which can be used for High-throughput sequecning data analysis.
 
- * ATACseq.sh: bulk ATACseq pipeline, from fastq to open chromatin regions.
- * ChIPseq.sh: ChIPseq pipeline, from fastq to peak calling step.
- * RNAseq.sh: bulk RNAseq pipeline, from fastq to differential expression genes.
- * adapt_trim.sh: adapter trimming function, seperated from the above pipelines.
- * cisVar.sh: pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
- * GATK_HF.sh: variants calling by [GATK](https://software.broadinstitute.org/gatk/), from fastq to vcf.
- * trans_assemble.sh: *de novo* transcript assembly, from fatsq to GTF.
- * PLAR.sh: *de novo* [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR) lncRNA discovery pipeline wrapper.
- * rRNA_dep.sh: ribosomal RNA depletion from fastq files.
+ * [ATACseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#atacseqsh): bulk ATACseq pipeline, from fastq to open chromatin regions.
+ * [ChIPseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chipseqsh): ChIPseq pipeline, from fastq to peak calling step.
+ * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differential expression genes.
+ * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
+ * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
+ * [GATK_HF.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#gatk_hfsh): variants calling by [GATK](https://software.broadinstitute.org/gatk/), from fastq to vcf.
+ * [trans_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#trans_assemblesh): *de novo* transcript assembly, from fatsq to GTF.
+ * [PLAR.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#plarsh): *de novo* [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR) lncRNA discovery pipeline wrapper.
+ * [rRNA_dep.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rrna_depsh): ribosomal RNA depletion from fastq files.
 
 > Requirements:
 > Python3, cutadapt, macs2(>=2.1.1), R, DESeq2, featureCounts, bowtie2, bwa,STAR, fastqc, samtools, bedtools, bedGraphToBigWig, bedItemOverlapCount
@@ -159,6 +159,7 @@ cond2_rep1_R1.fastq.gz
 cond2_rep1_R2.fastq.gz 
 cond2_rep2_R1.fastq.gz 
 cond2_rep2_R2.fastq.gz
+....
 ```
 
 And a text file discribing samples per conditon e.g.
@@ -169,6 +170,7 @@ cond1_rep1  cond1
 cond1_rep2  cond1
 cond2_rep1  cond2
 cond2_rep2  cond2
+....
 ```
 
 You can use the script to scan fastq files and generate the text file:
