@@ -86,6 +86,7 @@ Paired-end fastq files with **_R1/2** extension, ex:test_R1.fastq.gz, test_R2.fa
 Or single-end fastq file with -p.
 
 #### Options
+
 help message can be shown by `ChIPseq.sh -h`
 
 ```shell
@@ -228,7 +229,7 @@ All results will be store in current (./) directory.
 
 ## adapt_trim.sh
 
-This script is seperated from ChIPseq.sh, it trims adapter sequences from fastq files with cutadapt@python3.
+This script is separated from ChIPseq.sh, it trims adapter sequences from fastq files with cutadapt@python3.
 
 #### Input
 * Paired-end fastq files or single-end with -s, e.g. test_R1.fastq.gz test_R2.fastq.gz
@@ -325,7 +326,7 @@ All results will be store in current (./) directory.
 
 ## PLAR.sh
 
-This script is a re-wrrited wrapper of [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR).  
+This script is a re-writted wrapper of [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR).  
 > Requirements
 stringtie, cuffdiff, plar, CPC2 and HMMER
 
@@ -339,8 +340,8 @@ stringtie, cuffdiff, plar, CPC2 and HMMER
 ```
 
 > NOTE:
-Edit the script and mofiy $plar_path, $cpc2_path.
-Addtional annotation files required in $plar_path, see [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR) for nore details.
+Edit the script and modify $plar_path, $cpc2_path.
+Additional annotation files required in $plar_path, see [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR) for more details.
 
 #### Output
 All results will be store in current (./) directory.
