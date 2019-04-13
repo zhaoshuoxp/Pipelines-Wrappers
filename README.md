@@ -25,7 +25,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
 This script QC fastq files and align reads to hg19/GRCh37 using Bowtie2, convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting. 
 
 #### Input
-Paired-end fastq files with **_R1/2** extension, ex:test_R1.fastq.gz, test_R2.fastq.gz 
+Paired-end fastq files with **_R1/2** extension, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
 > Single-end sequencing data is also supported with -s, although it is not recommended.
 
 #### Options
@@ -82,7 +82,7 @@ All results will be store in current (./) directory.
 This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using BWA, convert to filtered BAM/BED and bigwig format but DOES NOT call peaks.
 
 #### Input
-Paired-end fastq files with **_R1/2** extension, ex:test_R1.fastq.gz, test_R2.fastq.gz 
+Paired-end fastq files with **_R1/2** extension, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
 Or single-end fastq file with -p.
 
 #### Options
@@ -146,7 +146,7 @@ See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) an
 This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using STAR, featureCounts and DESeq2 will be used for reads count and differntial expresssion genes discovery.
 
 #### Input
-* Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directoy, e.g.
+* Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directoy, i.e.
 
 > Single-end not supported
 
@@ -163,7 +163,7 @@ cond2_rep2_R2.fastq.gz
 ....
 ```
 
-And a text file discribing samples per conditon e.g.
+And a text file discribing samples per conditon i.e.
 
 ```shell
 sample  condition
@@ -232,7 +232,7 @@ All results will be store in current (./) directory.
 This script is separated from ChIPseq.sh, it trims adapter sequences from fastq files with cutadapt@python3.
 
 #### Input
-* Paired-end fastq files or single-end with -s, e.g. test_R1.fastq.gz test_R2.fastq.gz
+* Paired-end fastq files or single-end with -s, i.e. test_R1.fastq.gz test_R2.fastq.gz
 
 #### Options
 help message can be shown by `adapt_trim.sh -h`
