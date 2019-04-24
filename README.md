@@ -143,7 +143,7 @@ See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) an
 
 ## RNAseq.sh
 
-This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using STAR, featureCounts and DESeq2 will be used for reads count and differntial expresssion genes discovery.
+This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using STAR, featureCounts and DESeq2 will be used for reads count and differential expresssion genes discovery.
 
 #### Input
 * Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directoy, i.e.
@@ -181,10 +181,10 @@ wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/RNAs
 chmod 755 RNAseq.sh 
 ./RNAseq.sh -p /path/to/directory/contains/fastq/
 ```
-then the condition.txt will be created and open with VIM. sample column will have been filled, edit the text by adding the condition information on 2nd column.
+then the condition.txt will be created and open with VIM. sample column (1st) should have been filled, edit the text by adding the condition information on the 2nd column.
 
 > NOTE:
-> !!! Provide **the PATH of the DIRECTORY** which contains fastq to the scripts, DO NOT give the path of fastq files directly !!!
+> Provide **the PATH of the DIRECTORY** which contains fastq to the scripts, DO NOT give the path of fastq files directly!
 
 #### Options
 help message can be shown by `RNAseq.sh -h`
