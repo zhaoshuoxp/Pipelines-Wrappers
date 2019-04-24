@@ -216,8 +216,7 @@ All results will be store in current (./) directory.
 * count.txt: featureCounts output, raw fragments count.
 * deseq.r: R script for DESeq2.
 * all_genes_exp.txt: size-factor normalized gene expression levels with *P* values.
-* fastqc: the report(s) of fastqc
-* logs: running logs
+* logs: running logs and fastqc reports.
 
 > NOTE:
  Sample names in conditions.txt has to match featureCount output, check your text or generate it by the script.
