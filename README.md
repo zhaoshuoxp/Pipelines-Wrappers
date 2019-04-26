@@ -211,10 +211,10 @@ Usage: RNAseq.sh <options> -c conditions.txt /PATH/to/directoy/contains/fastq/
 
 All results will be store in current (./) directory.
 
-* {prefix}_R1/2_trimmed.gz: adapter trimmed fastq files.
-* {prefix}.bam: STAR output, accepted alignments.
-* count.txt: featureCounts output, raw fragments count.
-* deseq.r: R script for DESeq2.
+* TRIMMED/{prefix}_R1/2_trimmed.gz: adapter trimmed fastq files.
+* BAM/{prefix}.bam: STAR output, accepted alignments.
+* BAM/SJ.out.tab: STAR output, splice junctions.
+* featureCounts.txt: featureCounts output, raw fragments count.
 * all_genes_exp.txt: size-factor normalized gene expression levels with *P* values.
 * logs: running logs and fastqc reports.
 
@@ -406,4 +406,4 @@ All results will be store in current (./) directory.
 
 ------
 Author [@zhaoshuoxp](https://github.com/zhaoshuoxp)  
-Mar 27 2019  
+April 26 2019  
