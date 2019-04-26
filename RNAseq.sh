@@ -121,7 +121,7 @@ main(){
 	if [ ! -d TRIMMED ];then 
 		mkdir TRIMMED
 	fi
-	mv _trimmed.gz TRIMMED/
+	mv *_trimmed.gz TRIMMED/
 	
 	featureCounts -a $gtf -g gene_name -T $threads -p -t exon -o featureCounts.txt $bam
 	
@@ -129,7 +129,7 @@ main(){
 		mkdir BAM
 	fi
 	mv *.bam BAM/
-	mv *.tab BAM/
+	mv *.SJ.out.tab BAM/
 	
 	cat >deseq.r<<-EOF
 	#!/usr/bin/env Rscript
