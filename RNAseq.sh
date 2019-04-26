@@ -117,8 +117,19 @@ main(){
 		STAR_map ${files[i]} ${files[i+1]} $prefix
 		bam=${bam}" "${prefix}.bam
 	done 
-
-	featureCounts -a $gtf -g gene_name -T $threads -p -t exon -o count.txt $bam
+	
+	if [ ! -d TRIMMED ];then 
+		mkdir TRIMMED
+	fi
+	mv _trimmed.gz TRIMMED/
+	
+	featureCounts -a $gtf -g gene_name -T $threads -p -t exon -o featureCounts.txt $bam
+	
+	if [ ! -d BAM ];then 
+		mkdir BAM
+	fi
+	mv *.bam BAM/
+	mv *.tab BAM/
 	
 	cat >deseq.r<<-EOF
 	#!/usr/bin/env Rscript
@@ -152,7 +163,8 @@ main(){
 	}
 	EOF
 	chmod 755 deseq.r 
-	./deseq.r count.txt $2	
+	./deseq.r featureCounts.txt $2	
+	rm deseq.r
 }
 
 main $1 $cond
