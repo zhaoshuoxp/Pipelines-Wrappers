@@ -89,8 +89,8 @@ do
 			files=($1/*fastq.gz)
 			for (( i=0; i<${#files[@]} ; i+=2 ))
 				do
-					path=${files[i]##*/}
-					prefix=${path%_R1*}
+					filename=${files[i]##*/}
+					prefix=${filename%_R1*}
 					echo -e "$prefix\t" >> conditions.txt
 				done
 			vim conditions.txt 
