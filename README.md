@@ -22,7 +22,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
 ## ATACseq.sh
 
-This script QC fastq files and align reads to hg19/GRCh37 using Bowtie2, convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting. 
+This script QC fastq files and aligns reads to hg19/GRCh37 using Bowtie2, converts to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting. 
 
 #### Input
 Paired-end fastq files with **_R1/2** extension, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
@@ -79,7 +79,7 @@ All results will be store in current (./) directory.
 
 ## ChIPseq.sh
 
-This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using BWA, convert to filtered BAM/BED and bigwig format but DOES NOT call peaks.
+This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index provided) using BWA, converts to filtered BAM/BED and bigwig format but DOES NOT call peaks.
 
 #### Input
 Paired-end fastq files with **_R1/2** extension, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
@@ -143,10 +143,11 @@ See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) an
 
 ## RNAseq.sh
 
-This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using STAR, featureCounts and DESeq2 will be used for reads count and differential expresssion genes discovery.
+This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index and GTF provided) using STAR; featureCounts and DESeq2 will be used for reads counting and differential expression genes discovery.
 
 #### Input
-* Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directoy, i.e.
+
+* Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directory, i.e.
 
 > Single-end not supported
 
@@ -267,9 +268,10 @@ All results will be store in current (./) directory.
 ------
 ## trans_assemble.sh
 
-This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using HISAT2. *De novo* transcripts assembly will be performed by stingtie.
+This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index and GTF provided) using HISAT2. *De novo* transcripts assembly will be performed by stingtie.
 
 #### Input
+
 * Paired-end fastq files.
 
 #### Usage
