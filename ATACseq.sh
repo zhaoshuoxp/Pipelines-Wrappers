@@ -26,7 +26,7 @@ bw2index_hg19='/home/quanyi/genome/hg19/Bowtie2index/hg19.bowtie2'
 # help message
 help(){
 	cat <<-EOF
-  Usage: ATAC.sh <options> <reads1>|..<reads2> 
+  Usage: ATAC.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Paired-end fastq files with _R1/2 extension ###
   This script QC fastq files and align reads to hg19/GRCh37 using Bowtie2, 
