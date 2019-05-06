@@ -17,12 +17,13 @@ gG='GCTCTTCCGATCT'
 threads=1
 # STAR index
 STAR_idx='/home/quanyi/genome/hg19/STARindex'
+# GTF ref
 gtf='/home/quanyi/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf'
 
 # help message
 help(){
 	cat <<-EOF
-  Usage: RNAseq.sh <options> -c conditions.txt </PATH/to/directory/contains/fastq/> 
+  Usage: RNAseq.sh <options> -c conditions.txt </PATH/to/fastq/> 
 
   ### INPUT: Paired-end fastq files with _R1/2.fastq.gz extension, and a text file discribing samples per conditon ###
   This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using STAR, 
@@ -84,17 +85,17 @@ do
 		n) aA='CTGTCTCTTATACACATCT'
 		   gG='AGATGTGTATAAGAGACAG';;
 		i) STAR_idx=$OPTARG;;
-		p)	shift $(($OPTIND - 1))
-			echo -e "sample\tcondition" > conditions.txt
-			files=($1/*fastq.gz)
-			for (( i=0; i<${#files[@]} ; i+=2 ))
+		p) shift $(($OPTIND - 1))
+		   echo -e "sample\tcondition" > conditions.txt
+		   files=($1/*fastq.gz)
+		   for (( i=0; i<${#files[@]} ; i+=2 ))
 				do
 					filename=${files[i]##*/}
 					prefix=${filename%_R1*}
 					echo -e "$prefix\t" >> conditions.txt
 				done
-			vim conditions.txt 
-			exit 0;;
+		   vim conditions.txt 
+		   exit 0;;
 		h) help ;;
 		?) help
 			exit 1;;
