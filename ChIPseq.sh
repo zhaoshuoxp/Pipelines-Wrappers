@@ -27,7 +27,7 @@ bwaindex_hg19='/home/quanyi/genome/hg19/BWAindex/hg19bwa'
 # help message
 help(){
 	cat <<-EOF
-  Usage: ChIPseq.sh <options> <reads1>|..<reads2> 
+  Usage: ChIPseq.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Single-end or Paired-end fastq files with _R1/2 extension ###
   This script will fastq files and align reads to hg19/GRCh37(depends on index provided) using BWA, 
