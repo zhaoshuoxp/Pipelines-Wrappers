@@ -2,14 +2,11 @@
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
-which cutadapt &>/dev/null || { echo "cutadapt not found, install by pip3!"; exit 1; }
-which python3 &>/dev/null || { echo "python3 not found, install python3!"; exit 1; }
-which bwa &>/dev/null || { echo "bwa not found!"; exit 1; }
-which fastqc &>/dev/null || { echo "fastqc not found!"; exit 1; }
-which samtools &>/dev/null || { echo "samtools not found!"; exit 1; }
-which bedtools &>/dev/null || { echo "bedtools not found!"; exit 1; }
-which bedGraphToBigWig &>/dev/null || { echo "bedGraphToBigWig not found!"; exit 1; }
-which bedItemOverlapCount &>/dev/null || { echo "bedItemOverlapCount not found!"; exit 1; }
+requires=("cutadapt" "python3" "bwa" "fastqc" "samtools" "bedtools" "bedItemOverlapCount" "bedGraphToBigWig")
+for i in ${requires[@]};do
+	cmd="which "$i" &>/dev/null || { echo \"$i not found\"; exit 1; }"
+	eval $cmd 
+done
 
 #### DEFAULT CONFIGURATION ###
 # default Paired-end mod
