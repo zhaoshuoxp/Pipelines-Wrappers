@@ -2,15 +2,11 @@
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
-which cutadapt &>/dev/null || { echo "cutadapt not found, install by pip3!"; exit 1; }
-which python3 &>/dev/null || { echo "python3 not found, install python3!"; exit 1; }
-which bowtie2 &>/dev/null || { echo "bowtie2 not found!"; exit 1; }
-which fastqc &>/dev/null || { echo "fastqc not found!"; exit 1; }
-which samtools &>/dev/null || { echo "samtools not found!"; exit 1; }
-which bedtools &>/dev/null || { echo "bedtools not found!"; exit 1; }
-which macs2 &>/dev/null || { echo "macs2 > 2.1.1 not found!"; exit 1; }
-which bedGraphToBigWig &>/dev/null || { echo "bedGraphToBigWig not found!"; exit 1; }
-which bedItemOverlapCount &>/dev/null || { echo "bedItemOverlapCount not found!"; exit 1; }
+requires=("cutadapt" "python3" "bowtie2" "fastqc" "samtools" "macs2" "bedtools" "bedItemOverlapCount" "bedGraphToBigWig")
+for i in ${requires[@]};do
+	cmd="which "$i" &>/dev/null || { echo \"$i not found\"; exit 1; }"
+	eval $cmd 
+done
 
 #### DEFAULT CONFIGURATION ###
 # default Paired-end mod
@@ -143,6 +139,7 @@ peak_calling(){
 		awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4}else if($9=="-"){if($2>=5){print $1,$2-5,$6-5}else if($6>5){print $1,0,$6-5}}}' ${2}.bedpe > ${2}_shift.bed
 		# broad peak calling
 		cd macs2
+		echo "MACS2 version >= 2.1.1 required!"
 		macs2 callpeak -t ../${2}_shift.bed -g hs -n ${2} -f BEDPE --keep-dup all --broad -B --SPMR 
 	fi
 }
