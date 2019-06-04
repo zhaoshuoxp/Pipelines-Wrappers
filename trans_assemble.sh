@@ -1,19 +1,19 @@
 #!/bin/bash
 #####################################
-# Usage:	$1=reads1/file/to/path	#
-#			$2=reads2/file/to/path	#
-#			$3=output_file_prefix	#
+# Usage:	$READS1=reads1/file/to/path	#
+#			$READS2=reads2/file/to/path	#
+#			${NAME}=output_file_prefix	#
 #			$4=fr|rf|un(null)		#
 #####################################
 # check programs
-which cutadapt &>/dev/null || { echo "cutadapt not found!"; exit 1; }
-#which STAR &>/dev/null || { echo "STAR not found!"; exit 1; }
-which hisat2 &>/dev/null || { echo "HISAT2 not found!"; exit 1; }
-which fastqc &>/dev/null || { echo "fastqc not found!"; exit 1; }
-which stringtie &>/dev/null || { echo "stringtie not found!"; exit 1; }
+requires=("cutadapt" "python3" "hisat2" "fastqc" "stringtie" "STAR")
+for i in ${requires[@]};do
+	cmd="which "$i" &>/dev/null || { echo \"$i not found\"; exit 1; }"
+	eval $cmd 
+done
 
 # path to reads
-READS1=$1
+$READS1=$1
 READS2=$2
 NAME=$3
 gtf=/home/quanyi/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf
@@ -46,29 +46,28 @@ mkdir logs
 fi
 
 # fastqc control
-fastqc -f fastq -t $threads -o logs $1 
-fastqc -f fastq -t $threads -o logs $2
+fastqc -f fastq -t $threads -o logs $READS1 $READS2
 
 # cutadapt--trim adaptors Trueseq index
 # python3 version required for -j
-cutadapt -m 30 -j $threads -a AGATCGGAAGAGC -A AGATCGGAAGAGC -g GCTCTTCCGATCT -G GCTCTTCCGATCT -o $3_R1_trimmed.gz -p $3_R2_trimmed.gz $1 $2 > ./logs/$3_cutadapt.log
+cutadapt -m 30 -j $threads -a AGATCGGAAGAGC -A AGATCGGAAGAGC -g GCTCTTCCGATCT -G GCTCTTCCGATCT -o ${NAME}_R1_trimmed.gz -p ${NAME}_R2_trimmed.gz $READS1 $READS2 > ./logs/${NAME}_cutadapt.log
 
 # HISAT2--mapping
-hisat2 $strand1 -p $threads -x $index -1 $3_R1_trimmed.gz -2 $3_R2_trimmed.gz -S $3.sam 
+hisat2 $strand1 -p $threads -x $index -1 ${NAME}_R1_trimmed.gz -2 ${NAME}_R2_trimmed.gz -S ${NAME}.sam 
 
-samtools view -b -@ $threads $3.sam -o $3.bam
-samtools sort -@ $threads $3.bam -o $3_srt.bam
+samtools view -b -@ $threads ${NAME}.sam -o ${NAME}.bam
+samtools sort -@ $threads ${NAME}.bam -o ${NAME}_srt.bam
 
 # STAR--mapping
-#STAR --genomeDir /home/quanyi/genome/hg19/STARindex --runThreadN $threads $strand3 --outFilterIntronMotifs RemoveNoncanonical --outSAMtype BAM SortedByCoordinate --outFileNamePrefix ./ --readFilesIn $3_R1_trimmed.gz $3_R2_trimmed.gz --readFilesCommand gunzip -c
+#STAR --genomeDir /home/quanyi/genome/hg19/STARindex --runThreadN $threads $strand3 --outFilterIntronMotifs RemoveNoncanonical --outSAMtype BAM SortedByCoordinate --outFileNamePrefix ./ --readFilesIn ${NAME}_R1_trimmed.gz ${NAME}_R2_trimmed.gz --readFilesCommand gunzip -c
 
 #stringtie for transcripts assembly
-stringtie -G $gtf -l $3 -o $3.gtf $strand2 $3_srt.bam
+stringtie -G $gtf -l ${NAME} -o ${NAME}.gtf $strand2 ${NAME}_srt.bam
 #Aligned.sortedByCoord.out.bam #-B
 
 #clean
-rm $3.bam $3.sam
-mv $3_srt.bam $3.bam
+rm ${NAME}.bam ${NAME}.sam
+mv ${NAME}_srt.bam ${NAME}.bam
 
 ################ END ################
 #          Created by Aone          #
