@@ -2,14 +2,13 @@
 
 # check programs
 # multi-core support requires cutadapt installed and run by python3
-which cutadapt &>/dev/null || { echo "cutadapt not found, install by pip3!"; exit 1; }
-which python3 &>/dev/null || { echo "python3 not found, install python3!"; exit 1; }
-which STAR &>/dev/null || { echo "STAR not found!"; exit 1; }
-which fastqc &>/dev/null || { echo "fastqc not found!"; exit 1; }
-which featureCounts &>/dev/null || { echo "fastqc not found!"; exit 1; }
+requires=("cutadapt" "python3" "STAR" "fastqc" "featureCounts")
+for i in ${requires[@]};do
+	cmd="which "$i" &>/dev/null || { echo \"$i not found\"; exit 1; }"
+	eval $cmd 
+done
 
 #### DEFAULT CONFIGURATION #### 
-
 # default TruSeq adapters
 aA='AGATCGGAAGAGC'
 gG='GCTCTTCCGATCT'
