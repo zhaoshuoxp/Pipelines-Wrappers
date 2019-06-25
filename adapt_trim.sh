@@ -10,7 +10,7 @@ help(){
 	cat <<-EOF
   adapt_trim.sh <options> <reads1>|..<reads2> 
   Trim adapter sequences from fastq files with cutadapt@python3.
-  Trimmed and gzipped fastq will be store in current (./) directory.
+  Trimmed fastq will be store in current (./) directory.
   Options:
     -p Prefix of output
     -t Threads (1 default)
