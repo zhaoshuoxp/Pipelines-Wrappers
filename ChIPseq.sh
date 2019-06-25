@@ -27,8 +27,8 @@ help(){
   Usage: ChIPseq.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Single-end or Paired-end fastq files with _R1/2 extension ###
-  This script will fastq files and align reads to hg19/GRCh37(depends on index provided) using BWA, 
-  convert to filtered BAM/BED and bigwig format but DOES NOT call peaks,
+  This script will QC fastq files and align reads to hg19/GRCh37(depends on the indice provided) with BWA, 
+  convert to filtered BAM/BED and bigwig format but DOES NOT call peaks.
   All results will be store in current (./) directory.
   ### python3/cutadapt/fastqc/bwa/samtools/bedtools/bedGraphToBigWig/bedItemOverlapCount required ###
 
