@@ -25,9 +25,10 @@ help(){
   Usage: RNAseq.sh <options> -c conditions.txt </PATH/to/fastq/> 
 
   ### INPUT: Paired-end fastq files with _R1/2.fastq.gz extension, and a text file discribing samples per conditon ###
-  This script QC fastq files and align reads to hg19/GRCh37(depends on index and GTF provided) using STAR, 
+  This script will QC fastq files and align reads to hg19/GRCh37(depends on the indice and GTF provided) with STAR, 
   featureCounts and DESeq2 will be used for reads count and differntial expresss genes discovery,
   All results will be store in current (./) directory.
+  ### indice and GTF have to be the same assembly version ###
   ### python3/cutadapt/fastqc/STAR/R/featureCounts/DEseq2 required ###
 
   Options:
