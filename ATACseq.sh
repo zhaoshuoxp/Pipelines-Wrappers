@@ -25,9 +25,9 @@ help(){
   Usage: ATAC.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Paired-end fastq files ###
-  This script QC fastq files and align reads to hg19/GRCh37 using Bowtie2, 
+  This script will QC fastq files and align reads to hg19/GRCh37 with Bowtie2, 
   convert to filtered BAM/BED and bigwig format,
-  then call peaks with MACS2 in BEDPE mode after Tn5 shifting,
+  then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
   All results will be store in current (./) directory.
   ### python3/cutadapt/fastqc/bowtie2/samtools/bedtools/bedGraphToBigWig/bedItemOverlapCount/macs2(>=2.1.1) required ###
 
