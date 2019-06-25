@@ -13,7 +13,7 @@ for i in ${requires[@]};do
 done
 
 # path to reads
-$READS1=$1
+READS1=$1
 READS2=$2
 NAME=$3
 gtf=/home/quanyi/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf
@@ -31,10 +31,6 @@ elif [ $4 = 'rf' ];then
 	strand1='--rna-strandness RF'
 	strand2='--rf'
 	strand3=''
-elif [ $4 = 'un' ];then
-	strand1='--dta-cufflinks'
-	strand2=''
-	strand3='--outSAMstrandField intronMotif'
 else
 	strand1='--dta-cufflinks'
 	strand2=''
