@@ -67,7 +67,7 @@ All results will be store in current (./) directory.
 
 * test_shift.bed: Tn5 shifted BEDPE format, it will be used for macs2 peak calling.
 
-* macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will bed called by defualt. In addtion, test_broad_filtered.bed is the peaks file with hg19 blacklist filtering.
+* macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will be called by default. In addition, test_broad_filtered.bed is the peaks file with hg19 blacklist filtered.
 
 * fastqc: the report(s) of fastqc
 
@@ -83,7 +83,7 @@ This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index 
 
 #### Input
 Paired-end fastq files with **_R1/2** extension, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
-Or single-end fastq file with -p.
+Or single-end fastq file with `-s`.
 
 #### Options
 
@@ -123,7 +123,7 @@ All results will be store in current (./) directory.
 #### Peak calling
 > NOTE:
 > this pipeline does NOT call peaks, you might want to run it manually.
-> input is highly recommended for peak calling, put input fastq files through this pipeline with same parameter(s).
+> Input is highly recommended for peak calling, put input fastq files through this pipeline with same parameter(s).
 
 test_pe.bed (and input_pe.bed) can be used for macs2 peak calling in BEDPE mode:
 
@@ -131,7 +131,7 @@ test_pe.bed (and input_pe.bed) can be used for macs2 peak calling in BEDPE mode:
 macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test -B --SPMR
 ```
 
-> --broad is recommended for histone modifications when using macs2
+> --broad is recommended for histone modifications.
 
 test_se.bed and test_filtered.bam can also be used in BED or BAM mode of macs2.
 
@@ -164,7 +164,7 @@ cond2_rep2_R2.fastq.gz
 ....
 ```
 
-And a text file discribing samples per conditon i.e.
+And a text file describing samples per condition. i.e.
 
 ```shell
 sample  condition
@@ -182,12 +182,13 @@ wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/RNAs
 chmod 755 RNAseq.sh 
 ./RNAseq.sh -p /path/to/directory/contains/fastq/
 ```
-then the condition.txt will be created and open with VIM. sample column (1st) should have been filled, edit the text by adding the condition information on the 2nd column.
+Then the condition.txt will be created and opened with VIM. Sample column (1st) should have been filled, edit the text by adding the condition information on the 2nd column.
 
 > NOTE:
 > Provide **the PATH of the DIRECTORY** which contains fastq to the scripts, DO NOT give the path of fastq files directly!
 
 #### Options
+
 help message can be shown by `RNAseq.sh -h`
 
 ```shell
@@ -221,7 +222,7 @@ All results will be store in current (./) directory.
 
 > NOTE:
  Sample names in conditions.txt has to match featureCount output, check your text or generate it by the script.
- This script cannot compare the DE genes condition by condition automatically if you have >2 conditions to compare. Either edit deseq.r or load count.txt to R. A online tool can be used [iDEP](http://bioinformatics.sdstate.edu/idep/).
+ This script cannot compare the DE genes condition by condition automatically if you have >2 conditions to compare. Either edit deseq.r or load count.txt to R. A online tool can be used: [iDEP](http://bioinformatics.sdstate.edu/idep/).
 
 
 
