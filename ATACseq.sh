@@ -17,7 +17,7 @@ gG='AGATGTGTATAAGAGACAG'
 # default 1 core to run
 threads=1
 # Bowtie2 index
-bw2index_hg19='/home/quanyi/genome/hg19/Bowtie2index/hg19.bowtie2'
+bw2index_hg19='/genome/hg19/Bowtie2index/hg19.bowtie2'
 
 # help message
 help(){

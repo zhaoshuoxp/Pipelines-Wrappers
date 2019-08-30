@@ -15,9 +15,9 @@ gG='GCTCTTCCGATCT'
 # default 1 core to run
 threads=1
 # STAR index
-STAR_idx='/home/quanyi/genome/hg19/STARindex'
+STAR_idx='/genome/hg19/STARindex'
 # GTF ref
-gtf='/home/quanyi/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf'
+gtf='/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf'
 
 # help message
 help(){

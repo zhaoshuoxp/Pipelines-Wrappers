@@ -19,7 +19,7 @@ gG='GCTCTTCCGATCT'
 # default 1 core to run
 threads=1
 # BWA index
-bwaindex_hg19='/home/quanyi/genome/hg19/BWAindex/hg19bwa'
+bwaindex_hg19='/genome/hg19/BWAindex/hg19bwa'
 
 # help message
 help(){

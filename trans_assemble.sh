@@ -16,9 +16,9 @@ done
 READS1=$1
 READS2=$2
 NAME=$3
-gtf=/home/quanyi/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf
+gtf=/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf
 #gtf=/home/quanyi/app/PLAR/hg19_ensembl.gtf
-index=/home/quanyi/genome/hg19/HISAT2index/genome_tran
+index=/genome/hg19/HISAT2index/genome_tran
 #STAR_idx=/home/quanyi/genome/hg19/STARindex
 threads=16
 
