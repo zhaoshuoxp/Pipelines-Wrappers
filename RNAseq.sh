@@ -5,10 +5,10 @@
 requires=("cutadapt" "python3" "STAR" "fastqc" "featureCounts")
 for i in ${requires[@]};do
 	cmd="which "$i" &>/dev/null || { echo \"$i not found\"; exit 1; }"
-	eval $cmd 
+	eval $cmd
 done
 
-#### DEFAULT CONFIGURATION #### 
+#### DEFAULT CONFIGURATION ####
 # default TruSeq adapters
 aA='AGATCGGAAGAGC'
 gG='GCTCTTCCGATCT'
@@ -22,10 +22,10 @@ gtf='/genome/hg19/gencode.v19.chr_patch_hapl_scaff.annotation.gtf'
 # help message
 help(){
 	cat <<-EOF
-  Usage: RNAseq.sh <options> -c conditions.txt </PATH/to/fastq/> 
+  Usage: RNAseq.sh <options> -c conditions.txt </PATH/to/fastq/>
 
-  ### INPUT: Paired-end fastq files with _R1/2.fastq.gz extension, and a text file discribing samples per conditon ###
-  This script will QC fastq files and align reads to hg19/GRCh37(depends on the indice and GTF provided) with STAR, 
+  ### INPUT: Paired-end fastq files with _1/2.fq.gz extension, and a text file discribing samples per conditon ###
+  This script will QC fastq files and align reads to hg19/GRCh37(depends on the indice and GTF provided) with STAR,
   featureCounts and DESeq2 will be used for reads count and differntial expresss genes discovery,
   All results will be store in current (./) directory.
   ### indice and GTF have to be the same assembly version ###
@@ -42,10 +42,10 @@ help(){
 
   NOTE:
     1) ### Put fastq files of each condition all together in a directoy and give this PATH (NOT fastq files) to the script ###
-    2) Sample names in conditions.txt must be shown without _R1/2.fastq.gz extension,
+    2) Sample names in conditions.txt must be shown without _1/2.fq.gz extension,
  	The order of the samples has to the same as in command: ls -1 for the script to work,
     You may use this script to prepare the conditions.txt:
-      RNAseq.sh -p </PATH/contains/fastq> 
+      RNAseq.sh -p </PATH/contains/fastq>
     Then edit conditions.txt in current directory by adding condition names in 2nd column,
     Provide this text to the script by <-c conditions.txt>.
 EOF
@@ -58,7 +58,7 @@ STAR_map(){
 	# cutadapt--trim adaptors Truseq index
 	# python3 version required for -j
 	cutadapt -m 30 -j $threads -a $aA -A $aA -g $gG -G $gG -o ${3}_R1_trimmed.gz -p ${3}_R2_trimmed.gz $1 $2 > ./logs/${3}_cutadapt.log
-	# set open file limit for STAR BAM sorting 
+	# set open file limit for STAR BAM sorting
 	ulimit -n 10000
 	# STAR--mapping
 	STAR --genomeDir $STAR_idx --runThreadN $threads --outSAMstrandField intronMotif --outFilterIntronMotifs RemoveNoncanonical --outSAMtype BAM SortedByCoordinate --outFileNamePrefix $3 --readFilesIn ${3}_R1_trimmed.gz ${3}_R2_trimmed.gz --readFilesCommand gunzip -c
@@ -87,14 +87,14 @@ do
 		i) STAR_idx=$OPTARG;;
 		p) shift $(($OPTIND - 1))
 		   echo -e "sample\tcondition" > conditions.txt
-		   files=($1/*fastq.gz)
+		   files=($1/*.fq.gz)
 		   for (( i=0; i<${#files[@]} ; i+=2 ))
 				do
 					filename=${files[i]##*/}
-					prefix=${filename%_R1*}
+					prefix=${filename%_1*}
 					echo -e "$prefix\t" >> conditions.txt
 				done
-		   vim conditions.txt 
+		   vim conditions.txt
 		   exit 0;;
 		h) help ;;
 		?) help
@@ -106,50 +106,50 @@ done
 shift $(($OPTIND - 1))
 
 main(){
-	if [ ! -d logs ];then 
+	if [ ! -d logs ];then
 		mkdir logs
 	fi
 
-	files=($1/*fastq.gz)
+	files=($1/*fq.gz)
 	for (( i=0; i<${#files[@]} ; i+=2 ))
 	do
 		filename=${files[i]##*/}
-		prefix=${filename%_R1*}
+		prefix=${filename%_1*}
 		STAR_map ${files[i]} ${files[i+1]} $prefix
 		bam=${bam}" "${prefix}.bam
-	done 
-	
-	if [ ! -d TRIMMED ];then 
+	done
+
+	if [ ! -d TRIMMED ];then
 		mkdir TRIMMED
 	fi
 	mv *_trimmed.gz TRIMMED/
-	
+
 	featureCounts -a $gtf -g gene_name -T $threads -p -t exon -o featureCounts.txt $bam
-	
-	if [ ! -d BAM ];then 
+
+	if [ ! -d BAM ];then
 		mkdir BAM
 	fi
 	mv *.bam BAM/
 	mv *.SJ.out.tab BAM/
-	
+
 	cat >deseq.r<<-EOF
 	#!/usr/bin/env Rscript
 	library("DESeq2")
 	options<-commandArgs(trailingOnly = T)
-	
+
 	data <- read.table(options[1], header=T, quote="\t", check.names=F, skip=1)
 	SampCond <- read.table(options[2], header=T, quote="\t")
 
 	names(data)[7:ncol(data)] ->sample
 	sub(pattern=".bam", replacement="", sample) ->sampleNames
 	if (all(SampCond\$sample==sampleNames)){
-		
+
 		names(data)[7:ncol(data)] <- sampleNames
 		countData <- as.matrix(data[7:ncol(data)])
 		rownames(countData) <- data\$Geneid
 		database <- data.frame(name=sampleNames, condition=SampCond\$condition)
 		rownames(database) <- sampleNames
-		
+
 		dds <- DESeqDataSetFromMatrix(countData, colData=database, design= ~ condition)
 		dds <- dds[ rowSums(counts(dds)) > 1, ]
 		dds <- DESeq(dds)
@@ -160,11 +160,11 @@ main(){
 		write.table(resdata, "all_genes_exp.txt", row.names=F, sep="\t", quote=F)
 
 	}else{
-		stop("Sample names in conditions.txt don't match featureCount output!")	
+		stop("Sample names in conditions.txt don't match featureCount output!")
 	}
 	EOF
-	chmod 755 deseq.r 
-	./deseq.r featureCounts.txt $2	
+	chmod 755 deseq.r
+	./deseq.r featureCounts.txt $2
 	rm deseq.r
 }
 
