@@ -147,7 +147,7 @@ This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index 
 
 #### Input
 
-* Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directory, i.e.
+* Paired-end fastq files with **_1/2.fq.gz** extension, put fastq files of each condition all together in a directory, i.e.
 
 > Single-end not supported
 
@@ -221,8 +221,8 @@ All results will be store in current (./) directory.
 * logs: running logs and fastqc reports.
 
 > NOTE:
- Sample names in conditions.txt has to match featureCount output, check your text or generate it by the script.
- This script cannot compare the DE genes condition by condition automatically if you have >2 conditions to compare. Either edit deseq.r or load count.txt to R. A online tool can be used: [iDEP](http://bioinformatics.sdstate.edu/idep/).
+ Sample names in conditions.txt have to match featureCounts output, check your text or generate it by the script.
+ This script cannot compare the DE genes condition by condition automatically if you have >2 conditions to compare. Either edit deseq.r or load featureCounts.txt to R. A online tool can be used: [iDEP](http://bioinformatics.sdstate.edu/idep/).
 
 
 
