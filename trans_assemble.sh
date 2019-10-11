@@ -32,7 +32,7 @@ elif [ $4 = 'rf' ];then
 	strand2='--rf'
 	strand3=''
 else
-	strand1='--dta-cufflinks'
+	strand1=''
 	strand2=''
 	strand3='--outSAMstrandField intronMotif'
 fi
@@ -49,7 +49,7 @@ fastqc -f fastq -t $threads -o logs $READS1 $READS2
 cutadapt -m 30 -j $threads -a AGATCGGAAGAGC -A AGATCGGAAGAGC -g GCTCTTCCGATCT -G GCTCTTCCGATCT -o ${NAME}_R1_trimmed.gz -p ${NAME}_R2_trimmed.gz $READS1 $READS2 > ./logs/${NAME}_cutadapt.log
 
 # HISAT2--mapping
-hisat2 $strand1 -p $threads -x $index -1 ${NAME}_R1_trimmed.gz -2 ${NAME}_R2_trimmed.gz -S ${NAME}.sam 
+hisat2 $strand1 -p $threads --dta -x $index -1 ${NAME}_R1_trimmed.gz -2 ${NAME}_R2_trimmed.gz -S ${NAME}.sam 
 
 samtools view -b -@ $threads ${NAME}.sam -o ${NAME}.bam
 samtools sort -@ $threads ${NAME}.bam -o ${NAME}_srt.bam
