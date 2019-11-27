@@ -147,7 +147,7 @@ This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index 
 
 #### Input
 
-* Paired-end fastq files with **_1/2.fq.gz** extension, put fastq files of each condition all together in a directory, i.e.
+* Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directory, i.e.
 
 > Single-end not supported
 
@@ -236,6 +236,7 @@ This script is separated from ChIPseq.sh, it trims adapter sequences from fastq 
 * Paired-end fastq files or single-end with -s, i.e. test_R1.fastq.gz test_R2.fastq.gz
 
 #### Options
+
 help message can be shown by `adapt_trim.sh -h`
 
 ```shell
@@ -328,7 +329,7 @@ All results will be store in current (./) directory.
 
 ## PLAR.sh
 
-This script is a re-writted wrapper of [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR).  
+This script is a re-written wrapper of [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR).  
 > Requirements
 stringtie, cuffdiff, plar, CPC2 and HMMER
 
