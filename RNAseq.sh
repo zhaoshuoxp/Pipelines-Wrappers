@@ -130,7 +130,7 @@ main(){
 		mkdir BAM
 	fi
 	mv *.bam BAM/
-	mv *.SJ.out.tab BAM/
+	mv *SJ.out.tab BAM/
 
 	cat >deseq.r<<-EOF
 	#!/usr/bin/env Rscript
