@@ -4,8 +4,7 @@
 # multi-core support requires cutadapt installed and run by python3
 requires=("cutadapt" "python3" "bwa" "fastqc" "samtools" "bedtools" "bedItemOverlapCount" "bedGraphToBigWig")
 for i in ${requires[@]};do
-	cmd="which "$i" &>/dev/null || { echo \"$i not found\"; exit 1; }"
-	eval $cmd 
+	which $i &>/dev/null || { echo $i not found; exit 1; }
 done
 
 #### DEFAULT CONFIGURATION ###
