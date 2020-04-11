@@ -161,7 +161,7 @@ main(){
 	}else{
 		stop("Sample names in conditions.txt don't match featureCount output!")
 	}
-	EOF
+EOF
 	chmod 755 deseq.r
 	./deseq.r featureCounts.txt $2
 	rm deseq.r
