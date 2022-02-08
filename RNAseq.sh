@@ -24,8 +24,8 @@ help(){
   Usage: RNAseq.sh <options> -c conditions.txt </PATH/to/fastq/>
 
   ### INPUT: Paired-end fastq files with _R1/2.fastq.gz extension, and a text file discribing samples per conditon ###
-  This script will QC fastq files and align reads to hg19/GRCh37(depends on the indice and GTF provided) with STAR,
-  featureCounts and DESeq2 will be used for reads count and differntial expresss genes discovery,
+  This script will QC fastq files and align reads to hg19/GRCh37(depends on the indices and GTF provided) with STAR,
+  featureCounts and DESeq2 will be used for reads count and differential express genes discovery,
   All results will be store in current (./) directory.
   ### indice and GTF have to be the same assembly version ###
   ### python3/cutadapt/fastqc/STAR/R/featureCounts/DEseq2 required ###
@@ -40,7 +40,7 @@ help(){
     -h Print this help message
 
   NOTE:
-    1) ### Put fastq files of each condition all together in a directoy and give this PATH (NOT fastq files) to the script ###
+    1) ### Put fastq files of each condition all together in a directory and give this PATH (NOT fastq files) to the script ###
     2) Sample names in conditions.txt must be shown without _R1/2.fastq.gz extension,
  	The order of the samples has to the same as in command: ls -1 for the script to work,
     You may use this script to prepare the conditions.txt:
