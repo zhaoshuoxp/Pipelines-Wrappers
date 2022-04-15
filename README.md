@@ -5,7 +5,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
  * [ATACseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#atacseqsh): bulk ATACseq pipeline, from fastq to open chromatin regions.
  * [ChIPseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chipseqsh): ChIPseq pipeline, from fastq to peak calling step.
- * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differential expression genes.
+ * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differential expressed genes.
  * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
  * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
  * [GATK_HF.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#gatk_hfsh): variants calling by [GATK](https://software.broadinstitute.org/gatk/), from fastq to vcf.
@@ -14,7 +14,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
  * [rRNA_dep.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rrna_depsh): ribosomal RNA depletion from fastq files.
 
 > Requirements:
-> Python3, cutadapt, macs2(>=2.1.1), R, DESeq2, featureCounts, bowtie2, bwa,STAR, fastqc, samtools, bedtools, bedGraphToBigWig, bedItemOverlapCount
+> Python3, cutadapt, macs2(>=2.1.1), R, DESeq2, featureCounts, bowtie2, bwa,STAR, fastqc, samtools, bedtools, deeptools
 
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu) [![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
 
@@ -22,10 +22,10 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
 ## ATACseq.sh
 
-This script QC fastq files and aligns reads to hg19/GRCh37 using Bowtie2, converts to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting. 
+This script will QC fastq files and align reads to the reference genome build with Bowtie2, depending on the species selection passed by -g or the index and other required files passed by -i, -b and -c,  convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
 
 #### Input
-Paired-end fastq files with **_R1/2** extension, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
+Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
 > Single-end sequencing data is also supported with -s, although it is not recommended.
 
 #### Options
@@ -33,13 +33,16 @@ Paired-end fastq files with **_R1/2** extension, i.e. test_R1.fastq.gz, test_R2.
 help message can be shown by `ATACseq.sh -h`
 
 ```shell
-Usage: ATAC.sh <options> <reads1>|..<reads2> 
+Usage: ATAC.sh <options> -g <hg38|hg19|mm10> <reads1>|..<reads2> 
     Options:
-        -i [str] Bowtie2 index PATH
-        -p [str] Prefix of output
-        -t [int] Threads (1 default)
-        -s Single-end mod (DO NOT recommend, Paired-end default)
-        -h Print this help message
+      -g [str] Genome build selection <hg38|hg19|mm10>
+      -i [str] Custom bowtie2 index PATH
+      -b [str] Custom blacklist PATH
+      -c [str] Genome size abbr supported by MACS2
+      -p [str] Prefix of output
+      -t [int] Threads (1 default)
+      -s Single-end mod (DO NOT recommend, Paired-end default)
+      -h Print this help messagee
 ```
 
 #### Example
@@ -47,10 +50,19 @@ Usage: ATAC.sh <options> <reads1>|..<reads2>
 ```shell
 wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ATACseq.sh
 chmod 755 ATACseq.sh
-./ATACseq.sh -i /path/to/bwt2idx/ -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+./ATACseq.sh -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
+Alternatively, you may use your custom Bowtie2 genome index, open chromatin blacklist:
+
+```shell
+./ATACseq.sh -i /path/to/Bowtie2/index -b /path/to/blacklist -c dm -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+```
+
+
+
 ####  Output
+
 All results will be store in current (./) directory.
 
 * test_trimmed_R1/2.fastq.gz: adapter trimmed fastq files.
@@ -67,7 +79,7 @@ All results will be store in current (./) directory.
 
 * test_shift.bed: Tn5 shifted BEDPE format, it will be used for macs2 peak calling.
 
-* macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will be called by default. In addition, test_broad_filtered.bed is the peaks file with hg19 blacklist filtered.
+* macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will be called by default. In addition, test_broad_filtered.bed is the peaks file with blacklist filtered.
 
 * fastqc: the report(s) of fastqc
 
@@ -79,10 +91,10 @@ All results will be store in current (./) directory.
 
 ## ChIPseq.sh
 
-This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index provided) using BWA, converts to filtered BAM/BED and bigwig format but DOES NOT call peaks.
+This script will QC fastq files and align reads to reference genome with BWA, depending on the species selection passed by -g or the index passed by -i,  convert to filtered BAM/BED and bigwig format but DOES NOT call peaks.
 
 #### Input
-Paired-end fastq files with **_R1/2** extension, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
+Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
 Or single-end fastq file with `-s`.
 
 #### Options
@@ -90,24 +102,32 @@ Or single-end fastq file with `-s`.
 help message can be shown by `ChIPseq.sh -h`
 
 ```shell
-Usage: ChIPseq.sh <options> <reads1>|..<reads2> 
+Usage: ChIPseq.sh <options> -g <hg38|hg19|mm10> <reads1>|..<reads2> 
     Options:
-        -i [str] BWA index PATH
-        -p [str] Prefix of output
-        -t [int] Threads (1 default)
-        -s Single-end mod (Paired-end default)
-        -a Use BWA aln algorithm (BWA mem default)
-        -h Print this help message
+      -g [str] Genome build selection <hg38|hg19|mm10>
+      -i [str] Custom BWA index PATH
+      -p [str] Prefix of output
+      -t [int] Threads (1 default)
+      -s Single-end mod (Paired-end default)
+      -a Use BWA aln algorithm (BWA mem default)
+      -h Print this help message
 ```
 
 #### Example
 
 ```shell
-    wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ChIPseq.sh
-    chmod 755 ChIPseq.sh
-    ./ChIPseq.sh -i /path/to/bwaidx/ -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ChIPseq.sh
+chmod 755 ChIPseq.sh
+./ChIPseq.sh -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
+Alternatively, you may use your custom BWA genome index :
+
+```shell
+./ChIPseq.sh -i /path/to/BWA/index -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+```
+
 ####  Output
+
 All results will be store in current (./) directory.
 
 * test_trimmed[_R1/2].fastq.gz: adapter trimmed fastq files.
@@ -128,7 +148,7 @@ All results will be store in current (./) directory.
 test_pe.bed (and input_pe.bed) can be used for macs2 peak calling in BEDPE mode:
 
 ```shell
-macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test -B --SPMR
+macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test
 ```
 
 > --broad is recommended for histone modifications.
@@ -143,11 +163,11 @@ See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) an
 
 ## RNAseq.sh
 
-This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index and GTF provided) using STAR; featureCounts and DESeq2 will be used for reads counting and differential expression genes discovery.
+This script will QC fastq files and align reads to the reference genome and transcriptome with STAR, depending on the species selection passed by -s or the index and GTF passed by -i and -g, featureCounts and DESeq2 will be used for reads counting and differential expressed genes discovery,
 
 #### Input
 
-* Paired-end fastq files with **_R1/2.fastq.gz** extension, put fastq files of each condition all together in a directory, i.e.
+* Paired-end fastq files with _R1/2.fastq.gz suffix all together in a directory, i.e.
 
 > Single-end not supported
 
@@ -164,14 +184,14 @@ cond2_rep2_R2.fastq.gz
 ....
 ```
 
-And a text file describing samples per condition. i.e.
+And a text file with meta information. i.e.
 
 ```shell
 sample  condition
-cond1_rep1  cond1
-cond1_rep2  cond1
-cond2_rep1  cond2
-cond2_rep2  cond2
+cond1_rep1  group1
+cond1_rep2  group1
+cond2_rep1  group2
+cond2_rep2  group2
 ....
 ```
 
@@ -182,7 +202,7 @@ wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/RNAs
 chmod 755 RNAseq.sh 
 ./RNAseq.sh -p /path/to/directory/contains/fastq/
 ```
-Then the condition.txt will be created and opened with VIM. Sample column (1st) should have been filled, edit the text by adding the condition information on the 2nd column.
+Then the meta.txt will be created and opened with VIM. Sample column (1st) should have been filled, edit the text by adding the group information on the 2nd column.
 
 > NOTE:
 > Provide **the PATH of the DIRECTORY** which contains fastq to the scripts, DO NOT give the path of fastq files directly!
@@ -194,19 +214,26 @@ help message can be shown by `RNAseq.sh -h`
 ```shell
 Usage: RNAseq.sh <options> -c conditions.txt /PATH/to/directoy/contains/fastq/ 
     Options:
-        -c [str] /PATH/to/conditions.txt
-        -i [str] STAR index PATH
-        -g [str] Reference GTF transcripts PATH
-        -t [int] Threads (1 default)
-        -p prepare condition.txt
-        -n Nextera adapters (Truseq default)
-        -h Print this help message
+      -m [str] /PATH/to/meta.txt
+      -s [str] species <hg|mm> hg=hg38, mm=mm10
+      -i [str] Custom STAR index PATH
+      -g [str] Custom Reference GTF transcripts PATH
+      -t [int] Threads (1 default)
+      -p prepare meta.txt
+      -n Nextera adapters (Truseq default)
+      -h Print this help message
 ```
 
 #### Example
 
 ```shell
-./RNAseq.sh -i /path/to/STARidx/ -g /path/to/ref/GTF -c conditions.txt -t 24 /path/to/directory/contains/fastq/
+./RNAseq.sh -s hg -m meta.txt -t 24 /path/to/directory/contains/fastq/
+```
+
+Alternatively, you may use your custom genome and transcriptome reference:
+
+```shell
+./RNAseq.sh -i /path/to/STAR/index -g /path/to/GTF -m meta.txt -t 24 /path/to/directory/contains/fastq/
 ```
 
 ####  Output
@@ -221,8 +248,8 @@ All results will be store in current (./) directory.
 * logs: running logs and fastqc reports.
 
 > NOTE:
- Sample names in conditions.txt have to match featureCounts output, check your text or generate it by the script.
- This script cannot compare the DE genes condition by condition automatically if you have >2 conditions to compare. Either edit deseq.r or load featureCounts.txt to R. A online tool can be used: [iDEP](http://bioinformatics.sdstate.edu/idep/).
+Sample names in meta.txt have to match the featureCounts output exactly, check your text or use this script to create it.
+This script cannot automatically run the DEG discovery pair-wisely if you have >2 groups. Either edit deseq.r or analyze it manually in R. A online tool might be useful: [iDEP](http://bioinformatics.sdstate.edu/idep/).
 
 
 
@@ -243,10 +270,10 @@ help message can be shown by `adapt_trim.sh -h`
 Usage: adapt_trim.sh <options> <reads1>|..<reads2
     Options:
     	-p Prefix of output
-        -t Threads (1 default)
-        -s Single-end mod (Paired-end default)
-        -n Nextera adapters (Truseq default)
-        -h Print this help message
+      -t Threads (1 default)
+      -s Single-end mod (Paired-end default)
+      -n Nextera adapters (Truseq default)
+      -h Print this help message
 ```
 
 #### Example
