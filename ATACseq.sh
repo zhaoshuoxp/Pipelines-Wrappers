@@ -2,7 +2,7 @@
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
-requires=("cutadapt" "python3" "bowtie2" "fastqc" "samtools" "macs2" "bedtools" "bedItemOverlapCount" "bedGraphToBigWig")
+requires=("cutadapt" "python3" "bowtie2" "fastqc" "samtools" "macs2" "bedtools" "bamCoverage")
 for i in ${requires[@]};do
 	which $i &>/dev/null || { echo $i not found; exit 1; }
 done
@@ -15,8 +15,15 @@ aA='CTGTCTCTTATACACATCT'
 gG='AGATGTGTATAAGAGACAG'
 # default 1 core to run
 threads=1
-# Bowtie2 index
-bw2index_hg19='/genome/hg19/Bowtie2index/hg19.bowtie2'
+# genome build url
+bw2index_hg19='/mnt/date3/Project/zhaoqy/genome/hg19/BOWTIE2index/hg19'
+bw2index_hg38='/mnt/date3/Project/zhaoqy/genome/hg38/BOWTIE2index/hg38'
+bw2index_mm10='/mnt/date3/Project/zhaoqy/genome/mm10/BOWTIE2index/mm10'
+bklt_url_hg19='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/hg19-blacklist.v2.bed.gz'
+bklt_url_hg38='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/hg38-blacklist.v2.bed.gz'
+bklt_url_mm10='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/mm10-blacklist.v2.bed.gz'
+# Picard
+picard_url='https://github.com/broadinstitute/picard/releases/download/2.27.1/picard.jar'
 
 # help message
 help(){
@@ -24,14 +31,17 @@ help(){
   Usage: ATAC.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Paired-end fastq files ###
-  This script will QC fastq files and align reads to hg19/GRCh37 with Bowtie2, 
+  This script will QC fastq files and align reads to the reference genome build with Bowtie2, depending on the species selection passed by -g or the index and other required files passed by -i, -b and -c, 
   convert to filtered BAM/BED and bigwig format,
   then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
   All results will be store in current (./) directory.
-  ### python3/cutadapt/fastqc/bowtie2/samtools/bedtools/bedGraphToBigWig/bedItemOverlapCount/macs2(>=2.1.1) required ###
+  ### python3/cutadapt/fastqc/bowtie2/samtools/bedtools/deeptools/macs2>=2.1.1 required ###
 
   Options:
-    -i [str] Bowtie2 index PATH
+    -g [str] Genome build selection <hg38|hg19|mm10>
+    -i [str] Custom bowtie2 index PATH
+    -b [str] Custom blacklist PATH
+    -c [str] Genome size abbr supported by MACS2
     -p [str] Prefix of output
     -t [int] Threads (1 default)
     -s Single-end mod (DO NOT recommend, Paired-end default)
@@ -48,7 +58,7 @@ QC_mapping(){
 		# Nextera adapter trimming
 		cutadapt -m 30 -j $threads -a $aA -g $gG -o ${2}_trimmed.fastq.gz $3 > ./logs/${2}_cutadapt.log
 		# Bowtie2 align
-		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index_hg19 -U ${2}_trimmed.fastq.gz -S ${2}.sam
+		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index -U ${2}_trimmed.fastq.gz -S ${2}.sam
 		echo 'Bowtie2 mapping summary:' > ./logs/${2}_align.log
 		tail -n 15 nohup.out >> ./logs/${2}_align.log
 	else
@@ -58,24 +68,10 @@ QC_mapping(){
 		# TruSeq adapter trimming
 		cutadapt -m 30 -j $threads -a $aA -A $aA -g $gG -G $gG -o ${2}_trimmed_R1.fastq.gz -p ${2}_trimmed_R2.fastq.gz $3 $4 > ./logs/${2}_cutadapt.log
 		# Bowtie2 align
-		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index_hg19 -1 ${2}_trimmed_R1.fastq.gz -2 ${2}_trimmed_R2.fastq.gz -S ${2}.sam
+		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index -1 ${2}_trimmed_R1.fastq.gz -2 ${2}_trimmed_R2.fastq.gz -S ${2}.sam
 		echo 'Bowtie2 mapping summary:' > ./logs/${2}_align.log
 		tail -n 15 nohup.out >> ./logs/${2}_align.log
 	fi
-}
-
-# Convert BAM to BigWig
-bam2bigwig(){
-	# create bed from bam, requires bedtools bamToBed
-	bamToBed -i $2 -split > ${1}_se.bed
-	# get chromasome length
-	curl -s ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/chromInfo.txt.gz | gunzip -c > hg19_len
-	# create plus and minus strand bedgraph
-	cat ${1}_se.bed | sort -k1,1 | bedItemOverlapCount hg19 -chromSize=hg19_len stdin | sort -k1,1 -k2,2n > accepted_hits.bedGraph
-	# convert to bigwig
-	bedGraphToBigWig accepted_hits.bedGraph hg19_len ${1}.bw
-	# removing intermediery files
-	rm accepted_hits.bedGraph hg19_len
 }
 
 # SAM2BAM and filtering to BED
@@ -102,7 +98,7 @@ sam_bam_bed(){
 	# paired-end CMD
 	else
 		# download picard.jar for PE duplicates removal
-		wget https://github.com/broadinstitute/picard/releases/download/2.18.27/picard.jar
+		wget $picard_url
 		# mark duplicates
 		java -jar picard.jar MarkDuplicates INPUT=${1}_srt.bam OUTPUT=${1}_mkdup.bam METRICS_FILE=./logs/${1}_dup.log REMOVE_DUPLICATES=false
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
@@ -132,23 +128,19 @@ peak_calling(){
 		awk -F $'\t' 'BEGIN{OFS=FS}{if($6=="+"){$2=$2+4}else if($6=="-"){${3}=${3}-5} print $0}' ${2}_se.bed > ${2}_shift_se.bed
 		# broad peak calling
 		cd macs2
-		macs2 callpeak -t ../${2}_shift_se.bed -g hs -n ${2} -f BED --keep-dup all --broad -B --SPMR --nomodel --shift -37 --extsize 73
+		macs2 callpeak -t ../${2}_shift_se.bed -g $sp -n ${2} -f BED --keep-dup all --broad --nomodel --shift -37 --extsize 73
+		# Blacklist filter 
+		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
 	else
 		# Tn5 shift in PE mode
 		awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4}else if($9=="-"){if($2>=5){print $1,$2-5,$6-5}else if($6>5){print $1,0,$6-5}}}' ${2}.bedpe > ${2}_shift.bed
 		# broad peak calling
 		cd macs2
 		echo "MACS2 version >= 2.1.1 required!"
-		macs2 callpeak -t ../${2}_shift.bed -g hs -n ${2} -f BEDPE --keep-dup all --broad -B --SPMR 
+		macs2 callpeak -t ../${2}_shift.bed -g $sp -n ${2} -f BEDPE --keep-dup all --broad 
+		# Blacklist filter 
+		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
 	fi
-}
-
-# Blacklist filter 
-blacklist_filter(){
-	curl -s http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeDacMapabilityConsensusExcludable.bed.gz | gunzip -c > bklt_hg19
-	intersectBed -v -a ${1}_peaks.broadPeak -b bklt_hg19 > ${1}_broad_filtered.bed
-	rm bklt_hg19
-	cd ..
 }
 
 # no ARGs error
@@ -157,11 +149,30 @@ if [ $# -lt 1 ];then
 	exit 1
 fi
 
-while getopts "st:hi:p:" arg
+while getopts "st:hg:i:b:c:p:" arg
 do
 	case $arg in
+		g) if [ $OPTARG = "hg19" ]; then
+			bw2index=$bw2index_hg19
+			curl -s $bklt_url_hg19 | gunzip -c > bklt
+			sp='hs'
+		   elif [ $OPTARG = "hg38" ]; then
+			bw2index=$bw2index_hg38
+			curl -s $bklt_url_hg38 | gunzip -c > bklt
+			sp='hs'
+		   elif [ $OPTARG = "mm10" ]; then
+			bw2index=$bw2index_mm10
+			curl -s $bklt_url_mm10 | gunzip -c > bklt
+			sp='mm'
+		   else
+			echo "Only support hg38, hg19 or mm10, or pass your custom genome build"
+			exit 1
+		   fi
+		   blkt_file=$(readlink -f bklt);;
 		# Bowtie2 index PATH
-		i) bw2index_hg19=$OPTARG;;
+		i) bw2index=$OPTARG;;
+		b) blkt_file=$OPTARG;;
+		c) sp=$OPTARG;;
 		t) threads=$OPTARG;;
 		# single-end mod
 		s) mod='se';;
@@ -198,7 +209,8 @@ main(){
 
 	sam_bam_bed $prefix $mod
 
-	bam2bigwig $prefix ${prefix}_filtered.bam
+	# convert filtered BAM to CPM normalized bigWig with deeptools
+	bamCoverage --binSize 10 -p $threads --normalizeUsing CPM -b ${prefix}_filtered.bam -o ${prefix}.bw
 	
 	if [ ! -d macs2 ];then 
 		mkdir macs2
@@ -206,7 +218,6 @@ main(){
 
 	peak_calling $mod $prefix
 
-	blacklist_filter $prefix
 }
 
 main $1 $2
