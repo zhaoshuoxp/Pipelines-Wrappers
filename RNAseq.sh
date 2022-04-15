@@ -43,7 +43,7 @@ help(){
     -h Print this help message
 
   NOTE:
-    1) ### Put fastq files all together in a directory and give this PATH (NOT fastq files) to the script ###
+    1) ### Put fastq files cand give this PATH (NOT fastq files) to the script ###
     2) Sample names in meta.txt must be shown without _R1/2.fastq.gz extension,
  	The order of the samples has to the same as in command: ls -1 for the script to work,
     You may use this script to prepare the meta.txt:
