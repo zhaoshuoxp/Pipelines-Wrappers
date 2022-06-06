@@ -18,7 +18,7 @@ STAR_idx_hg='/mnt/date3/Project/zhaoqy/genome/hg38/STARindex'
 STAR_idx_mm='/mnt/date3/Project/zhaoqy/genome/mm10/STARindex'
 # GTF ref
 gtf_hg='/mnt/date3/Project/zhaoqy/genome/hg38/gencode.v37.chr_patch_hapl_scaff.annotation.gtf'
-gtf_mm='/mnt/date3/Project/zhaoqy/genome/hg38/gencode.vM25.chr_patch_hapl_scaff.annotation.gtf'
+gtf_mm='/mnt/date3/Project/zhaoqy/genome/mm10/gencode.vM25.chr_patch_hapl_scaff.annotation.gtf'
 
 # help message
 help(){
