@@ -12,9 +12,10 @@ This repository has the following combined shell/awk/python/R scripts which can 
  * [trans_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#trans_assemblesh): *de novo* transcript assembly, from fastq to GTF.
  * [PLAR.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#plarsh): *de novo* [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR) lncRNA discovery pipeline wrapper.
  * [rRNA_dep.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rrna_depsh): ribosomal RNA depletion from fastq files.
+ * [CRISPRlib.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#crisprlibsh): mapping CRISPR sgRNA library, from fastq to tables.
 
 > Requirements:
-> Python3, cutadapt, macs2(>=2.1.1), R, DESeq2, featureCounts, bowtie2, bwa,STAR, fastqc, samtools, bedtools, deeptools
+> Python3, cutadapt, macs2(>=2.1.1), R, DESeq2, featureCounts, bowtie1/2, bwa,STAR, fastqc, samtools, bedtools, deeptools
 
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu) [![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
 
@@ -435,6 +436,91 @@ All results will be store in current (./) directory.
 
   
 
+
 ------
-Author [@zhaoshuoxp](https://github.com/zhaoshuoxp)  
-April 26 2019  
+
+## CRISPRlib.sh
+
+This script uses cutadapt trimming the input fastq files to get the sgRNA sequences (20nt) according to the adaptor sequence on the 5' end next to the sgRNA, and then aligns these sequences to bowtie index build with the reference sgRNA library.  The Addgene library 110066 and 160129 have been prebuilt and can be directly assigned by  -l.
+
+#### Input
+
+* The fastq file containing sgRNA sequences.
+
+#### Usage
+
+help message can be shown by `CRISPRlib.sh -h`
+
+```shell
+    Usage: CRISPRlib.sh <options> <reads_clean.fq.gz>
+
+    ### INPUT: fastq files ###
+    This script will trim the input fastq to 20nt after the given sequence with cutadapt, and align the trimmed reads to the reference library build with Bowtie1, depending on the library selection passed by -l or the index and adapter sequence passed by -i and -a, then statisticize each sequence's frequency, and all results will be store in current (./) directory.
+    ### python3/cutadapt/bowtie1/samtools required ###
+
+    Options:
+    -l [str] library selection <110066|160129>
+    -i [str] Custom bowtie index PATH
+    -a [str] Custom adapter sequence
+    -p [str] Prefix of output
+    -n [int] Threads (1 default)
+    -h Print this help message
+```
+
+#### Example
+
+```shell
+CRISPRlib.sh -n 12 -l 110066 -p test lib_R2.fastq.gz
+```
+
+Alternatively, you may build your custom sgRNA library index and give the path to the script along with your adaptor sequence:
+
+1. First make sure your sgRNA library is in [FASTA](https://www.ncbi.nlm.nih.gov/genbank/fastaformat/) format, such as:
+
+```shell
+>sgZC3H12A_5
+GGGCAGCGACCTGAGACCAG
+>sgZC3H12A_6
+GGAGTGGAAGCGCTTCATCG
+...
+```
+
+Here is an example to format a csv file (let's say sgRNA name is in 1st column and sequence in 2nd column) to FASTA:
+
+```shell
+awk -F',' '{print ">"$1"\n"$2}' sample.csv > sample.fa
+```
+
+2. Then build bowite1 index using this FASTA:
+
+```shell
+bowtie-build --threads 12 sample.fa sgLib
+```
+
+This will generate a few index files with the prefix "sgLib" 
+
+3. Now you can run CRISPRlib.sh with your own library and adaptor sequence.
+
+```shell
+CRISPRlib.sh -n 12 -i /path/to/index/with/prefix -a YOURADAPTORSEQUENCE -p test lib_R2.fastq.gz
+```
+
+> The adaptor sequence is 5'-end next to the sgRNA, depends on the vector used. 8nt or more would be recommended.
+
+> Note: edit line53 to 58 or insert new options in the script if you want to automatically assign your own index path and adaptor sequences with -l.
+
+#### Output
+
+All results will be store in current (./) directory.
+
+* {prifix}.tr.fq.gz: trimmed fastq containing the sgRNA only (20bp)
+* {prefix}.sam: bowtie1 alignment
+* {prefix}.srt.bam:  bowtie1 alignment in sorted and indexed BAM format 
+* {prefix}.srt.bam.bai:  bowtie1 alignment index
+* ${pre}.log: trimming and alignment summary
+* {pre}.counts.tsv: a table delimited text with sgRNA name (1st column) and its count number (2nd column)
+* {pre}.table.tsv: insert the actual sequence between the name and count compared to counts.tsv
+
+------
+Author [@zhaoshuoxp](https://github.com/zhaoshuoxp) 
+Oct 11 2022
