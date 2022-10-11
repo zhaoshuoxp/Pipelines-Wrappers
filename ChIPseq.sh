@@ -41,8 +41,10 @@ help(){
     -p [str] Prefix of output
     -t [int] Threads (1 default)
     -s Single-end mod (Paired-end default)
+	-n Nextera adapters (Truseq default)
     -a Use BWA aln algorithm (BWA mem default)
     -h Print this help message
+
 EOF
 	exit 0
 }
@@ -133,7 +135,7 @@ if [ $# -lt 1 ];then
 	exit 1
 fi
 
-while getopts "sag:t:hi:p:" arg
+while getopts "sag:t:hi:p:n" arg
 do
 	case $arg in
 		g) if [ $OPTARG = "hg19" ]; then
@@ -153,6 +155,9 @@ do
 		s) mod='se';;
 		# BWA algorithm
 		a) alg='aln';;
+		# Nextera adapters
+		n) aA='CTGTCTCTTATACACATCT'
+			gG='AGATGTGTATAAGAGACAG';;
 		p) prefix=$OPTARG;;
 		h) help ;;
 		?) help
