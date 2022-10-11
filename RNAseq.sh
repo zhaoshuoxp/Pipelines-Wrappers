@@ -49,7 +49,7 @@ help(){
     You may use this script to prepare the meta.txt:
       RNAseq.sh -p </PATH/to/fastq/>
     Then edit meta.txt in current directory by adding group names in the 2nd column,
-    Provide this text to the script by <-c meta.txt>.
+    Provide this text to the script by <-m meta.txt>.
 EOF
 	exit 0
 }
