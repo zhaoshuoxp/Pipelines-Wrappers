@@ -16,7 +16,7 @@ help(){
     ### python3/cutadapt/bowtie1/samtools required ###
 
     Options:
-    -l [str] library selection <110066|160129>
+    -l [str] library selection <110066|160129|162256>
     -i [str] Custom bowtie index PATH
     -a [str] Custom adapter sequence
     -p [str] Prefix of output
@@ -29,7 +29,7 @@ EOF
 main(){
     cutadapt -g $adpt -j $threads -l 20 -m 19 -o ${pre}tr.fq.gz $1 > ${pre}log
     
-    bowtie -x $idx -n 0 -p $threads --no-unal -l 20 ${pre}tr.fq.gz -S ${pre}sam 2>&1 |tee -a ${pre}log
+    bowtie -x $idx -n 0 -p $threads --no-unal -l 20 ${pre}tr.fq.gz -S ${pre}sam 2>&1|tee -a ${pre}log
     
     samtools view -@ $threads -o ${pre}bam ${pre}sam
     samtools sort -@ $threads -o ${pre}srt.bam ${pre}bam
@@ -51,13 +51,16 @@ while getopts "l:i:a:n:p:h" arg
 do
     case $arg in
         l) if [ $OPTARG = "110066" ]; then
-            idx='~/genome/CRISPR/hs_metabolism_110066/metabolism'
+            idx='/mnt/date3/Project/zhaoqy/genome/CRISPR/hs_metabolism_110066/metabolism'
             adpt='TTTCTAGCTCTAAAAC'
         elif [ $OPTARG = "160129" ]; then
-            idx='~/genome/CRISPR/mm_metabolism_160129/sgRNA_lib'
+            idx='/mnt/date3/Project/zhaoqy/genome/CRISPR/mm_metabolism_160129/sgRNA_lib'
             adpt='TGTTTCCAGCATAGCTCTTAAAC'
-        else
-            echo "Only support 110066, 160129 libraries, or pass your own bowtie1 index and adapter sequences"
+        elif [ $OPTARG = "162256" ]; then
+	    idx='/mnt/date3/Project/zhaoqy/genome/CRISPR/hs_epigentics_162256/lib'
+	    adpt='ATAGCTCTTAAAC'
+	else
+            echo "Only support 110066, 160129, 162256 libraries, or pass your own bowtie1 index and adapter sequences"
             exit 1
         fi;;
         i) idx=$OPTARG;;
