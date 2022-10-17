@@ -518,7 +518,7 @@ All results will be store in current (./) directory.
 * {prefix}.sam: bowtie1 alignment
 * {prefix}.srt.bam:  bowtie1 alignment in sorted and indexed BAM format 
 * {prefix}.srt.bam.bai:  bowtie1 alignment index
-* ${pre}.log: trimming and alignment summary
+* {pre}.log: trimming and alignment summary
 * {pre}.counts.tsv: a table delimited text with sgRNA name (1st column) and its count number (2nd column)
 * {pre}.table.tsv: insert the actual sequence between the name and count compared to counts.tsv
 
