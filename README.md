@@ -131,12 +131,12 @@ Alternatively, you may use your custom BWA genome index :
 
 All results will be store in current (./) directory.
 
-* test_trimmed[_R1/2].fastq.gz: adapter trimmed fastq files.
-* test_mkdup.bam: all alignments, with duplicates marked.
-* test_filtered.bam: useful filtered alignments; duplicates, unpaired, unmapped, low-quality, secondary, chrM reads removed.
-* test_se.bed: useful filtered alignments in BED format.
-* test_pe.bed: useful filtered alignments in BEDPE format, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome.
-* test.bw: bigwig file converted from test_se.bed, can be upload to genome browser for visualization.
+* {prefix}_trimmed_R1/2.fastq.gz: adapter trimmed fastq files.
+* {prefix}_mkdup.bam: all alignments, with duplicates marked.
+* {prefix}_filtered.bam: useful filtered alignments; duplicates, unpaired, unmapped, low-quality, secondary, chrM reads removed.
+* {prefix}_se.bed: useful filtered alignments in BED format.
+* {prefix}_pe.bed: useful filtered alignments in BEDPE format, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome.
+* {prefix}.bw: bigwig file converted from test_se.bed, can be upload to genome browser for visualization.
 * fastqc: the report(s) of fastqc
 * logs: running logs
 
@@ -291,7 +291,7 @@ multi-threads support only works with python3>=3.4, multiprocessing>=0.70, cutad
 #### Output
 All results will be store in current (./) directory.
 
-* test_R1/2_trimmed.gz: adapter trimmed fastq files.
+* {prefix}_R1/2_trimmed.gz: adapter trimmed fastq files.
 
   
 
@@ -441,7 +441,7 @@ All results will be store in current (./) directory.
 
 ## CRISPRlib.sh
 
-This script uses cutadapt trimming the input fastq files to get the sgRNA sequences (20nt) according to the adaptor sequence on the 5' end next to the sgRNA, and then aligns these sequences to bowtie index build with the reference sgRNA library.  The Addgene library 110066 and 160129 have been prebuilt and can be directly assigned by  -l.
+This script uses cutadapt trimming the input fastq files to get the sgRNA sequences (20nt) according to the adaptor sequence on the 5' end next to the sgRNA, and then aligns these sequences to bowtie index build with the reference sgRNA library.  The Addgene library 110066, 160129 and 162256 have been prebuilt and can be directly assigned by  -l.
 
 #### Input
 
@@ -455,11 +455,12 @@ help message can be shown by `CRISPRlib.sh -h`
     Usage: CRISPRlib.sh <options> <reads_clean.fq.gz>
 
     ### INPUT: fastq files ###
-    This script will trim the input fastq to 20nt after the given sequence with cutadapt, and align the trimmed reads to the reference library build with Bowtie1, depending on the library selection passed by -l or the index and adapter sequence passed by -i and -a, then statisticize each sequence's frequency, and all results will be store in current (./) directory.
+    This script will trim the input fastq to 20nt after the given sequence with cutadapt, and align the trimmed reads to the reference library build with Bowtie1, depending on the library selection passed by -l or the index and adapter sequence passed by -i and -a,
+    then statisticize each sequence's frequency, and all results will be store in current (./) directory.
     ### python3/cutadapt/bowtie1/samtools required ###
 
     Options:
-    -l [str] library selection <110066|160129>
+    -l [str] library selection <110066|160129|162256>
     -i [str] Custom bowtie index PATH
     -a [str] Custom adapter sequence
     -p [str] Prefix of output
