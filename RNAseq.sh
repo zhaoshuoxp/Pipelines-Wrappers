@@ -14,20 +14,20 @@ gG='GCTCTTCCGATCT'
 # default 1 core to run
 threads=1
 # STAR index
-STAR_idx_hg='/mnt/date3/Project/zhaoqy/genome/hg38/STARindex'
-STAR_idx_mm='/mnt/date3/Project/zhaoqy/genome/mm10/STARindex'
+STAR_idx_hg='/nfs/baldar/quanyiz/genome/hg38/STARindex'
+STAR_idx_mm='/nfs/baldar/quanyiz/genome/mm10/STARindex'
 # GTF ref
-gtf_hg='/mnt/date3/Project/zhaoqy/genome/hg38/gencode.v37.chr_patch_hapl_scaff.annotation.gtf'
-gtf_mm='/mnt/date3/Project/zhaoqy/genome/mm10/gencode.vM25.chr_patch_hapl_scaff.annotation.gtf'
+gtf_hg='/nfs/baldar/quanyiz/genome/hg38/gencode.v44.chr_patch_hapl_scaff.annotation.gtf'
+gtf_mm='/nfs/baldar/quanyiz/genome/mm10/gencode.vM25.chr_patch_hapl_scaff.annotation.gtf'
 
 # help message
 help(){
 	cat <<-EOF
   Usage: RNAseq.sh <options> -m meta.txt </PATH/to/fastq/>
 
-  ### INPUT: Paired-end fastq files with _R1/2.fastq.gz extension, and a text file with meta information  ###
-  This script will QC fastq files and align reads to the reference genome and transcriptome with STAR, depending on the species selection passed by -s or the index and GTF passed by -i and -g,
-  featureCounts and DESeq2 will be used for reads counting and differential expressed genes discovery,
+  ### INPUT: Paired-end fastq files with _R1/2.fastq.gz suffix, and a text file with meta information  ###
+  This script will QC fastq files and align reads to the reference genome and transcriptome with STAR, depending on the species  passed by -s or the index and GTF passed by -i and -g,
+  featureCounts and DESeq2 will be used for reads counting and differentially expressed genes test,
   All results will be store in current (./) directory.
   ### indice and GTF have to be the same assembly version ###
   ### python3/cutadapt/fastqc/STAR>=2.7/R/featureCounts/DEseq2 required ###
@@ -43,12 +43,11 @@ help(){
     -h Print this help message
 
   NOTE:
-    1) ### Put fastq files cand give this PATH (NOT fastq files) to the script ###
-    2) Sample names in meta.txt must be shown without _R1/2.fastq.gz extension,
- 	The order of the samples has to the same as in command: ls -1 for the script to work,
+    1) ### Put fastq files and give the their parent directory (NOT fastq files themselves, script will scan the directory) to the script ###
+    2) Sample names in meta.txt must be shown without _R1/2.fastq.gz suffix, The order of samples has to the same as in command: ls -1 for the script to work,
     You may use this script to prepare the meta.txt:
-      RNAseq.sh -p </PATH/to/fastq/>
-    Then edit meta.txt in current directory by adding group names in the 2nd column,
+      RNAseq.sh -p </PATH/to/fastq/directory/>
+    Then edit meta.txt generated in current directory to add group/condition in the 2nd column,
     Provide this text to the script by <-m meta.txt>.
 EOF
 	exit 0

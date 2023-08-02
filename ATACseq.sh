@@ -16,9 +16,9 @@ gG='AGATGTGTATAAGAGACAG'
 # default 1 core to run
 threads=1
 # genome build url
-bw2index_hg19='/mnt/date3/Project/zhaoqy/genome/hg19/BOWTIE2index/hg19'
-bw2index_hg38='/mnt/date3/Project/zhaoqy/genome/hg38/BOWTIE2index/hg38'
-bw2index_mm10='/mnt/date3/Project/zhaoqy/genome/mm10/BOWTIE2index/mm10'
+bw2index_hg19='/nfs/baldar/quanyiz/genome/hg19/Bowtie2index/hg19.bowtie2'
+bw2index_hg38='/nfs/baldar/quanyiz/genome/hg38/Bowtie2index/hg38bowtie2'
+bw2index_mm10='/nfs/baldar/quanyiz/genome/mm10/Bowtie2index/mm10.bowtie2'
 bklt_url_hg19='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/hg19-blacklist.v2.bed.gz'
 bklt_url_hg38='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/hg38-blacklist.v2.bed.gz'
 bklt_url_mm10='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/mm10-blacklist.v2.bed.gz'
@@ -31,8 +31,8 @@ help(){
   Usage: ATAC.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Paired-end fastq files ###
-  This script will QC fastq files and align reads to the reference genome build with Bowtie2, depending on the species selection passed by -g or the index and other required files passed by -i, -b and -c, 
-  convert to filtered BAM/BED and bigwig format,
+  This script will QC fastq files and align reads to reference genome build with Bowtie2, depending on the species passed by -g or the index and other required files passed by -i, -b and -c, 
+  convert alignments to filtered BAM/BED and bigwig,
   then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
   All results will be store in current (./) directory.
   ### python3/cutadapt/fastqc/bowtie2/samtools/bedtools/deeptools/macs2>=2.1.1 required ###

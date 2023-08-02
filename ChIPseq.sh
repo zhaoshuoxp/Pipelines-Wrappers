@@ -18,9 +18,9 @@ gG='GCTCTTCCGATCT'
 # default 1 core to run
 threads=1
 # BWA index
-bwaindex_hg19='/mnt/date3/Project/zhaoqy/genome/hg19/BWAindex/hg19.fa'
-bwaindex_hg38='/mnt/date3/Project/zhaoqy/genome/hg38/BWAindex/GRCh38.p13.genome.fa'
-bwaindex_mm10='/mnt/date3/Project/zhaoqy/genome/mm10/BWAindex/mm10.fa'
+bwaindex_hg19='/nfs/baldar/quanyiz/genome/hg19/BWAindex/hg19bwa'
+bwaindex_hg38='/nfs/baldar/quanyiz/genome/hg38/BWAindex/hg38bwa'
+bwaindex_mm10='/nfs/baldar/quanyiz/genome/mm10/BWAindex/mm10bwa'
 # Picard
 picard_url='https://github.com/broadinstitute/picard/releases/download/2.27.1/picard.jar'
 
@@ -29,9 +29,9 @@ help(){
 	cat <<-EOF
   Usage: ChIPseq.sh <options> <reads1>|<reads2> 
 
-  ### INPUT: Single-end or Paired-end fastq files with _R1/2 extension ###
-  This script will QC fastq files and align reads to reference genome with BWA, depending on the species selection passed by -g or the index passed by -i, 
-  convert to filtered BAM/BED and bigwig format but DOES NOT call peaks.
+  ### INPUT: Single-end or Paired-end fastq files ###
+  This script will QC fastq files and align reads to reference genome with BWA, depending on the species passed by -g or the index passed by -i, 
+  convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
   All results will be store in current (./) directory.
   ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
 
@@ -41,7 +41,7 @@ help(){
     -p [str] Prefix of output
     -t [int] Threads (1 default)
     -s Single-end mod (Paired-end default)
-	-n Nextera adapters (Truseq default)
+    -n Nextera adapters (Truseq default)
     -a Use BWA aln algorithm (BWA mem default)
     -h Print this help message
 
