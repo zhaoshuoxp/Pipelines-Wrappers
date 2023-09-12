@@ -23,7 +23,7 @@ bklt_url_hg19='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/list
 bklt_url_hg38='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/hg38-blacklist.v2.bed.gz'
 bklt_url_mm10='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/mm10-blacklist.v2.bed.gz'
 # Picard
-picard_url='https://github.com/broadinstitute/picard/releases/download/2.27.1/picard.jar'
+picard_url='https://github.com/broadinstitute/picard/releases/download/3.1.0/picard.jar'
 
 # help message
 help(){
@@ -100,7 +100,7 @@ sam_bam_bed(){
 		# download picard.jar for PE duplicates removal
 		wget $picard_url
 		# mark duplicates
-		java -jar picard.jar MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false
+		java -jar picard.jar MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_mkdup.bam >> ./logs/${1}_align.log
 		# remove chrM alignments
