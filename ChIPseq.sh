@@ -109,7 +109,7 @@ sam_bam_bed(){
 		# download picard.jar for PE duplicates removal
 		wget $picard_url
 		# mark duplicates
-		java -jar picard.jar MarkDuplicates INPUT=${1}_srt.bam OUTPUT=${1}_mkdup.bam METRICS_FILE=./logs/${1}_dup.log REMOVE_DUPLICATES=false
+		java -jar picard.jar MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_mkdup.bam >> ./logs/${1}_align.log
 		# filter our unmapped/failedQC/unpaired/duplicates/secondary alignments
