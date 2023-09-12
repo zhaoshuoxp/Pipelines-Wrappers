@@ -22,7 +22,7 @@ bwaindex_hg19='/nfs/baldar/quanyiz/genome/hg19/BWAindex/hg19bwa'
 bwaindex_hg38='/nfs/baldar/quanyiz/genome/hg38/BWAindex/hg38bwa'
 bwaindex_mm10='/nfs/baldar/quanyiz/genome/mm10/BWAindex/mm10bwa'
 # Picard
-picard_url='https://github.com/broadinstitute/picard/releases/download/2.27.1/picard.jar'
+picard_url='https://github.com/broadinstitute/picard/releases/download/3.1.0/picard.jar'
 
 # help message
 help(){
@@ -109,7 +109,7 @@ sam_bam_bed(){
 		# download picard.jar for PE duplicates removal
 		wget $picard_url
 		# mark duplicates
-		java -jar picard.jar MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false
+		java -jar picard.jar MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_mkdup.bam >> ./logs/${1}_align.log
 		# filter our unmapped/failedQC/unpaired/duplicates/secondary alignments
