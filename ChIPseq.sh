@@ -2,7 +2,7 @@
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
-requires=("cutadapt" "python3" "bwa" "fastqc" "samtools" "bedtools" "bamCoverage")
+requires=("cutadapt" "python3" "bwa" "fastqc" "samtools" "bedtools" "bamCoverage" "chromap")
 for i in ${requires[@]};do
 	which $i &>/dev/null || { echo $i not found; exit 1; }
 done
@@ -10,6 +10,7 @@ done
 #### DEFAULT CONFIGURATION ###
 # default Paired-end mod
 mod='pe'
+aln='chromap'
 # default BWA mem algorithm
 alg='mem'
 # default TruSeq adapters
@@ -21,6 +22,15 @@ threads=1
 bwaindex_hg19='/nfs/baldar/quanyiz/genome/hg19/BWAindex/hg19bwa'
 bwaindex_hg38='/nfs/baldar/quanyiz/genome/hg38/BWAindex/hg38bwa'
 bwaindex_mm10='/nfs/baldar/quanyiz/genome/mm10/BWAindex/mm10bwa'
+chromapindex_hg19='/nfs/baldar/quanyiz/genome/hg19/Chromapindex/hg19'
+chromapindex_hg38='/nfs/baldar/quanyiz/genome/hg38/Chromapindex/hg38'
+chromapindex_mm10='/nfs/baldar/quanyiz/genome/mm10/Chromapindex/mm10'
+chromapref_hg19='/nfs/baldar/quanyiz/genome/hg19/GRCh37.p13.genome.fa'
+chromapref_hg38='/nfs/baldar/quanyiz/genome/hg38/GRCh38.p14.genome.fa'
+chromapref_mm10='/nfs/baldar/quanyiz/genome/mm10/GRCm38.p6.genome.fa'
+chromszize_hg19='/nfs/baldar/quanyiz/genome/hg19/hg19.chrom.sizes'
+chromszize_hg38='/nfs/baldar/quanyiz/genome/hg38/hg38.chrom.sizes'
+chromszize_mm10='/nfs/baldar/quanyiz/genome/mm10/chrom.sizes'
 # Picard
 picard_url='https://github.com/broadinstitute/picard/releases/download/3.1.0/picard.jar'
 
@@ -30,19 +40,23 @@ help(){
   Usage: ChIPseq.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Single-end or Paired-end fastq files ###
-  This script will QC fastq files and align reads to reference genome with BWA, depending on the species passed by -g or the index passed by -i, 
+  This script will QC fastq files and align reads to reference genome with BWA or chromap, depending on the species passed by -g or the index passed by -i, 
   convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
   All results will be store in current (./) directory.
   ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
 
   Options:
     -g [str] Genome build selection <hg38|hg19|mm10>
-    -i [str] Custom BWA index PATH
+    -x [str] Custom BWA index PATH
     -p [str] Prefix of output
     -t [int] Threads (1 default)
     -s Single-end mod (Paired-end default)
     -n Nextera adapters (Truseq default)
     -a Use BWA aln algorithm (BWA mem default)
+    -c Using chromap to process FASTQ instead of canonical bowtie2
+    -i [str] Custom chromap genome index (only valid with -c option)
+    -r [str] Custom chromap genome reference (only valid with -c option)
+    -z [str] Custom chromosome size table
     -h Print this help message
 
 EOF
@@ -121,12 +135,35 @@ sam_bam_bed(){
 		samtools sort -n -@ $threads -o ${1}.bam2 ${1}_filtered.bam
 		# bam2bedpe
 		bamToBed -bedpe -i ${1}.bam2 > ${1}.bedpe
+		bamToBed -i ${1}_filtered.bam > ${1}_se.bed
 		# bedpe to standard PE bed for macs2 peak calling (-f BEDPE)
 		cut -f1,2,6 ${1}.bedpe > ${1}_pe.bed
 		# clean
 		rm ${1}_srt.bam ${1}.bam2 ${1}.bedpe picard.jar
 	fi
 	rm ${1}.bam ${1}.sam
+	bamCoverage --binSize 10 -p $threads --normalizeUsing CPM -b ${1}_filtered.bam -o ${1}.bw
+}
+
+chromap_total(){
+	if [ $2 = 'se' ];then
+		chromap --preset chip -r $chromapref -x $chromapindex -t $threads -1 $3 -o ${1}_se.bed
+		echo 'chromap mapping summary:' > ./logs/${1}_align.log
+		tail -n 14 nohup.out >> ./logs/${1}_align.log
+		awk 'substr($1,1,3)=="chr"' ${1}_se.bed > ${1}_pri.bed
+	else
+		chromap --preset chip -r $chromapref -x $chromapindex -t $threads -1 $3 -2 $4 -o ${1}_pe.bed
+		echo 'chromap mapping summary:' > ./logs/${1}_align.log
+		tail -n 14 nohup.out >> ./logs/${1}_align.log
+		awk 'substr($1,1,3)=="chr"' ${1}_pe.bed > ${1}_pri.bed
+		len=$(gunzip -c $3 |head -n2|tail -n1|awk '{print length($0)}')
+		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
+	fi
+	factor=$(wc -l ${1}_pri.bed|awk '{print 1000000/$1}')
+	genomeCoverageBed -scale $factor -i ${1}_pri.bed -g $chromsize -bg > ${1}.bdg
+	bedSort ${1}.bdg ${1}.bdg1
+	bedGraphToBigWig ${1}.bdg1 $chromsize ${1}.bw
+	mv ${1}.bdg1 ${1}.bdg
 }
 
 # no ARGs error
@@ -135,30 +172,43 @@ if [ $# -lt 1 ];then
 	exit 1
 fi
 
-while getopts "sag:t:hi:p:n" arg
+while getopts "g:x:t:sacnp:z:r:i:h" arg
 do
 	case $arg in
 		g) if [ $OPTARG = "hg19" ]; then
 			bwaindex=$bwaindex_hg19
+			chromapindex=$chromapindex_hg19
+			chromapref=$chromapref_hg19
+			chromsize=$chromszize_hg19
 		   elif [ $OPTARG = "hg38" ]; then
 			bwaindex=$bwaindex_hg38
+			chromapindex=$chromapindex_hg38
+			chromapref=$chromapref_hg38
+			chromsize=$chromszize_hg38
 		   elif [ $OPTARG = "mm10" ]; then
 			bwaindex=$bwaindex_mm10
+			chromapindex=$chromapindex_mm10
+			chromapref=$chromapref_mm10
+			chromsize=$chromszize_mm10
 		   else
 			echo "Only support hg38, hg19 or mm10, or pass your custom genome index"
 			exit 1
 		   fi;;
 		# BWA index PATH
-		i) bwaindex=$OPTARG;;
+		x) bwaindex=$OPTARG;;
 		t) threads=$OPTARG;;
 		# single-end mod
 		s) mod='se';;
 		# BWA algorithm
 		a) alg='aln';;
+		c) aln='chromap';;
 		# Nextera adapters
 		n) aA='CTGTCTCTTATACACATCT'
 			gG='AGATGTGTATAAGAGACAG';;
 		p) prefix=$OPTARG;;
+		z) chromsize=$OPTARG;;
+		r) chromapref=$OPTARG;;
+		i) chromapindex=$OPTARG;;
 		h) help ;;
 		?) help
 			exit 1;;
@@ -187,12 +237,13 @@ main(){
 		mkdir fastqc
 	fi 
 	
-	QC_mapping $mod $alg $prefix $1 $2
+	if [ $aln = 'chromap' ];then
+		chromap_total $prefix $mod $1 $2
+	else
+		QC_mapping $mod $alg $prefix $1 $2
 
-	sam_bam_bed $prefix $mod
-
-	# convert filtered BAM to CPM normalized bigWig with deeptools
-	bamCoverage --binSize 10 -p $threads --normalizeUsing CPM -b ${prefix}_filtered.bam -o ${prefix}.bw
+		sam_bam_bed $prefix $mod
+	fi
 }
 
 main $1 $2
