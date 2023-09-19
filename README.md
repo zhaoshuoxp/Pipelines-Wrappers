@@ -5,6 +5,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
  * [ATACseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#atacseqsh): bulk ATACseq pipeline, from fastq to open chromatin regions.
  * [ChIPseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chipseqsh): ChIPseq pipeline, from fastq to peak calling step.
+ * [CutRun.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cutrunsh): CUT&RUN pipeline, from fastq to peak calling step.
  * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differential expressed genes.
  * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
  * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
@@ -23,7 +24,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
 ## ATACseq.sh
 
-This script will QC fastq files and align reads to the reference genome build with Bowtie2, depending on the species selection passed by -g or the index and other required files passed by -i, -b and -c,  convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
+This script will QC fastq files and align reads to the reference genome build with Bowtie2 or chromap, depending on the species selection passed by -g or the index and other required files passed by -i, -b and -c,  convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
 
 #### Input
 Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
@@ -35,15 +36,19 @@ help message can be shown by `ATACseq.sh -h`
 
 ```shell
 Usage: ATAC.sh <options> -g <hg38|hg19|mm10> <reads1>|..<reads2> 
-    Options:
-      -g [str] Genome build selection <hg38|hg19|mm10>
-      -i [str] Custom bowtie2 index PATH
-      -b [str] Custom blacklist PATH
-      -c [str] Genome size abbr supported by MACS2
-      -p [str] Prefix of output
-      -t [int] Threads (1 default)
-      -s Single-end mod (DO NOT recommend, Paired-end default)
-      -h Print this help messagee
+  Options:
+    -g [str] Genome build selection <hg38|hg19|mm10>
+    -x [str] Custom bowtie2 index PATH
+    -b [str] Custom blacklist PATH
+    -m [str] Genome size abbr supported by MACS2
+    -p [str] Prefix of output
+    -t [int] Threads (1 default)
+    -s Single-end mod (DO NOT recommend, Paired-end default)
+    -c Using chromap to process FASTQ instead of canonical bowtie2
+    -i [str] Custom chromap genome index (only valid with -c option)
+    -r [str] Custom chromap genome reference (only valid with -c option)
+    -z [str] Custom chromosome size table
+    -h Print this help message
 ```
 
 #### Example
@@ -54,10 +59,10 @@ chmod 755 ATACseq.sh
 ./ATACseq.sh -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
-Alternatively, you may use your custom Bowtie2 genome index, open chromatin blacklist:
+Alternatively, you may use chromap aligner to speed up the processing:
 
 ```shell
-./ATACseq.sh -i /path/to/Bowtie2/index -b /path/to/blacklist -c dm -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+./ATACseq.sh -c -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
 
@@ -86,13 +91,15 @@ All results will be store in current (./) directory.
 
 * logs: running logs
 
-  
+> Note using chromap only output shifited BED file in paired-end mode
+
+
 
 -----
 
 ## ChIPseq.sh
 
-This script will QC fastq files and align reads to reference genome with BWA, depending on the species selection passed by -g or the index passed by -i,  convert to filtered BAM/BED and bigwig format but DOES NOT call peaks.
+This script will QC fastq files and align reads to reference genome with BWA or chromap, depending on the species selection passed by -g or the index passed by -i,  convert to filtered BAM/BED and bigwig format but does NOT call peaks.
 
 #### Input
 Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
@@ -104,14 +111,19 @@ help message can be shown by `ChIPseq.sh -h`
 
 ```shell
 Usage: ChIPseq.sh <options> -g <hg38|hg19|mm10> <reads1>|..<reads2> 
-    Options:
-      -g [str] Genome build selection <hg38|hg19|mm10>
-      -i [str] Custom BWA index PATH
-      -p [str] Prefix of output
-      -t [int] Threads (1 default)
-      -s Single-end mod (Paired-end default)
-      -a Use BWA aln algorithm (BWA mem default)
-      -h Print this help message
+  Options:
+    -g [str] Genome build selection <hg38|hg19|mm10>
+    -x [str] Custom BWA index PATH
+    -p [str] Prefix of output
+    -t [int] Threads (1 default)
+    -s Single-end mod (Paired-end default)
+    -n Nextera adapters (Truseq default)
+    -a Use BWA aln algorithm (BWA mem default)
+    -c Using chromap to process FASTQ instead of canonical bowtie2
+    -i [str] Custom chromap genome index (only valid with -c option)
+    -r [str] Custom chromap genome reference (only valid with -c option)
+    -z [str] Custom chromosome size table
+    -h Print this help message
 ```
 
 #### Example
@@ -121,10 +133,10 @@ wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ChIP
 chmod 755 ChIPseq.sh
 ./ChIPseq.sh -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
-Alternatively, you may use your custom BWA genome index :
+Alternatively, you may use chromap aligner to speed up the processing :
 
 ```shell
-./ChIPseq.sh -i /path/to/BWA/index -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+./ChIPseq.sh -c -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
 ####  Output
@@ -140,11 +152,94 @@ All results will be store in current (./) directory.
 * fastqc: the report(s) of fastqc
 * logs: running logs
 
+> Note using chromap only output clean BED(PE) file
+
 
 #### Peak calling
 > NOTE:
-> this pipeline does NOT call peaks, you might want to run it manually.
-> Input is highly recommended for peak calling, put input fastq files through this pipeline with same parameter(s).
+> this pipeline does NOT call peaks, you may run it manually.
+> Input is highly recommended for peak calling, process input fastq files with this pipeline with same parameter(s).
+
+test_pe.bed (and input_pe.bed) can be used for macs2 peak calling in BEDPE mode:
+
+```shell
+macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test
+```
+
+> --broad is recommended for histone modifications.
+
+test_se.bed and test_filtered.bam can also be used in BED or BAM mode of macs2.
+
+See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) and [SICER](https://home.gwu.edu/~wpeng/Software.htm) or [SICERpy](https://github.com/dariober/SICERpy) (for Histone Mods peak calling).
+
+
+
+-----
+
+## CutRun.sh
+
+This script will QC fastq files and align reads to reference genome with Bowtie2 or chromap, depending on the species selection passed by -g or the index passed by -i,  convert to filtered BAM/BED and bigwig format but does NOT call peaks.
+
+#### Input
+
+Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
+
+> This script does NOT support Single-end sequencing.
+
+#### Options
+
+help message can be shown by `ChIPseq.sh -h`
+
+```shell
+Usage: CutRun.sh <options> -g <hg38|hg19|mm10> <reads1>|..<reads2> 
+  Options:
+    -g [str] Genome build selection <hg38|hg19|mm10>
+    -x [str] Custom Bowtie2 index PATH
+		-s [str] Custom chromosome size table
+    -p [str] Prefix of output
+    -t [int] Threads (1 default)
+    -c Using chromap to process FASTQ instead of canonical bowtie2
+    -i [str] chromap genome index (only valid with -c option)
+    -r [str] chromap genome reference (only valid with -c option)
+    -n Nextera adapters (Truseq default)
+    -h Print this help message
+```
+
+#### Example
+
+```shell
+wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/CutRun.sh
+chmod 755 CutRun.sh
+./CutRun.sh -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+```
+
+Alternatively, you may use chromap aligner to speed up the processing :
+
+```shell
+./CutRun.sh -c -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+```
+
+####  Output
+
+All results will be store in current (./) directory.
+
+* {prefix}_trimmed_R1/2.fastq.gz: adapter trimmed fastq files.
+* {prefix}_mkdup.bam: all alignments, with duplicates marked.
+* {prefix}_filtered.bam: useful filtered alignments; duplicates, unpaired, unmapped, low-quality, secondary, chrM reads removed.
+* {prefix}_se.bed: useful filtered alignments in BED format.
+* {prefix}_pe.bed: useful filtered alignments in BEDPE format, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome.
+* {prefix}.bw: bigwig file converted from test_se.bed, can be upload to genome browser for visualization.
+* fastqc: the report(s) of fastqc
+* logs: running logs
+
+> Note using chromap only output clean BED(PE) file
+
+
+#### Peak calling
+
+> NOTE:
+> this pipeline does NOT call peaks, you may run it manually.
+> Input is highly recommended for peak calling, process input fastq files with this pipeline with same parameter(s).
 
 test_pe.bed (and input_pe.bed) can be used for macs2 peak calling in BEDPE mode:
 
