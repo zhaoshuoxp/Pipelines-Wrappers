@@ -30,7 +30,7 @@ chromapref_hg38='/nfs/baldar/quanyiz/genome/hg38/GRCh38.p14.genome.fa'
 chromapref_mm10='/nfs/baldar/quanyiz/genome/mm10/GRCm38.p6.genome.fa'
 chromszize_hg19='/nfs/baldar/quanyiz/genome/hg19/hg19.chrom.sizes'
 chromszize_hg38='/nfs/baldar/quanyiz/genome/hg38/hg38.chrom.sizes'
-chromszize_mm10='/nfs/baldar/quanyiz/genome/mm10/chrom.sizes'
+chromszize_mm10='/nfs/baldar/quanyiz/genome/mm10/mm10.chrom.sizes'
 # Picard
 picard_url='https://github.com/broadinstitute/picard/releases/download/3.1.0/picard.jar'
 
