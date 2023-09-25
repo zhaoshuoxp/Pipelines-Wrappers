@@ -143,9 +143,10 @@ peak_calling(){
 	if [ $1 = 'se' ];then
 		# Tn5 shift in SE mode
 		awk -F $'\t' 'BEGIN{OFS=FS}{if($6=="+"){$2=$2+4}else if($6=="-"){$3=$3-5} print $0}' ${2}_se.bed > ${2}_shift_se.bed
+		mv ${2}_shift_se.bed  ${2}_se.bed
 		# broad peak calling
 		cd macs2
-		macs2 callpeak -t ../${2}_shift_se.bed -g $sp -n ${2} -f BED --keep-dup all --broad --nomodel --shift -37 --extsize 73
+		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --broad --nomodel --shift -37 --extsize 73
 		# Blacklist filter 
 		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
 	else
