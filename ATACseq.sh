@@ -129,6 +129,7 @@ sam_bam_bed(){
 		samtools sort -n -@ $threads -o ${1}.bam2 ${1}_filtered.bam
 		# bam2bedpe
 		bamToBed -bedpe -i ${1}.bam2 > ${1}.bedpe
+		bamToBed -i ${1}_filtered.bam > ${1}_se.bed
 		# clean
 		rm ${1}_srt.bam ${1}.bam2 picard.jar 
 	fi
@@ -149,14 +150,16 @@ peak_calling(){
 		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
 	else
 		# Tn5 shift in PE mode
-		awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4}else if($9=="-"){if($2>=5){print $1,$2-5,$6-5}else if($6>5){print $1,0,$6-5}}}' ${2}.bedpe > ${2}_shift.bed
+		awk -v OFS="\t" '{if($9=="+"){print $1,$2+4,$6+4}else if($9=="-"){if($2>=5){print $1,$2-5,$6-5}else if($6>5){print $1,0,$6-5}}}' ${2}.bedpe > ${2}_shift_pe.bed
+		awk -F $'\t' 'BEGIN{OFS=FS}{if($6=="+"){$2=$2+4}else if($6=="-"){${3}=${3}-5} print $0}' ${2}_se.bed > ${2}_shift_se.bed
 		# broad peak calling
 		cd macs2
 		echo "MACS2 version >= 2.1.1 required!"
-		macs2 callpeak -t ../${2}_shift.bed -g $sp -n ${2} -f BEDPE --keep-dup all --broad 
+		macs2 callpeak -t ../${2}_shift_pe.bed -g $sp -n ${2} -f BEDPE --keep-dup all --broad 
 		# Blacklist filter 
 		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
 	fi
+	rm  ${2}_se.bed ${2}.bedpe
 }
 
 chromap_total(){
@@ -166,7 +169,7 @@ chromap_total(){
 		tail -n 14 nohup.out >> ./logs/${1}_align.log
 		awk 'substr($1,1,3)=="chr"' ${1}_se.bed > ${1}_pri.bed
 	else
-		chromap --preset chip -r $chromapref -x $chromapindex -t $threads -1 $3 -2 $4 -o ${1}_pe.bed
+		chromap --preset atac -r $chromapref -x $chromapindex -t $threads -1 $3 -2 $4 -o ${1}_pe.bed
 		echo 'chromap mapping summary:' > ./logs/${1}_align.log
 		tail -n 14 nohup.out >> ./logs/${1}_align.log
 		awk 'substr($1,1,3)=="chr"' ${1}_pe.bed > ${1}_pri.bed
