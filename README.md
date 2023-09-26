@@ -71,27 +71,15 @@ Alternatively, you may use chromap aligner to speed up the processing:
 
 All results will be store in current (./) directory.
 
-* test_trimmed_R1/2.fastq.gz: adapter trimmed fastq files.
-
-* test_mkdup.bam: all alignments, with duplicates marked.
-
-* test_filtered.bam: useful filtered alignments; duplicates, unpaired, unmapped, low-quality, secondary, chrM reads removed.
-
-* test_se.bed: useful filtered alignments in BED format.
-
-* test_pe.bed: useful filtered alignments in BEDPE format, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome.
-
-* test.bw: bigwig file converted from test_se.bed, can be upload to genome browser for visualization.
-
-* test_shift.bed: Tn5 shifted BEDPE format, it will be used for macs2 peak calling.
-
-* macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will be called by default. In addition, test_broad_filtered.bed is the peaks file with blacklist filtered.
-
+* {prefix}_trimmed_R1/2.fastq.gz: adapter trimmed fastq files.
+* {prefix}_mkdup.bam: all alignments, with duplicates marked.
+* {prefix}_filtered.bam: useful filtered alignments; duplicates, unpaired, unmapped, low-quality, secondary, chrM reads removed.
+* {prefix}_se.bed: useful filtered alignments in BED format, Tn5 shifted.
+* {prefix}_pe.bed: useful filtered alignments in BEDPE format,  Tn5 shifted, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome. It will be used for macs2 peak calling.
+* {prefix}.bw: bigwig file converted from {prefix}_filtered.bam, can be upload to genome browser for visualization.
+* macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will be called by default. In addition, {prefix}_broad_filtered.bed is the peaks file with blacklist filtered.
 * fastqc: the report(s) of fastqc
-
 * logs: running logs
-
-> Note using chromap only output shifited BED file in paired-end mode
 
 
 
@@ -148,11 +136,11 @@ All results will be store in current (./) directory.
 * {prefix}_filtered.bam: useful filtered alignments; duplicates, unpaired, unmapped, low-quality, secondary, chrM reads removed.
 * {prefix}_se.bed: useful filtered alignments in BED format.
 * {prefix}_pe.bed: useful filtered alignments in BEDPE format, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome.
-* {prefix}.bw: bigwig file converted from test_se.bed, can be upload to genome browser for visualization.
+* {prefix}.bw: bigwig file converted from {prefix}_filtered.bam, can be upload to genome browser for visualization.
 * fastqc: the report(s) of fastqc
 * logs: running logs
 
-> Note using chromap only output clean BED(PE) file
+
 
 
 #### Peak calling
@@ -232,7 +220,7 @@ All results will be store in current (./) directory.
 * fastqc: the report(s) of fastqc
 * logs: running logs
 
-> Note using chromap only output clean BED(PE) file
+
 
 
 #### Peak calling
