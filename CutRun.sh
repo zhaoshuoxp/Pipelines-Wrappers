@@ -88,7 +88,7 @@ sam_bam_bed(){
 		bedGraphToBigWig ${1}.bdg1 $chromsize ${1}.bw
 		mv ${1}.bdg1 ${1}.bdg
 		len=$(gunzip -c $3 |head -n2|tail -n1|awk '{print length($0)}')
-		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
+		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$4,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
 	else
 		# sam2bam+sort
 		samtools view -b -@ $threads -o ${1}.bam ${1}.sam 
@@ -106,6 +106,7 @@ sam_bam_bed(){
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
 		# sort bam by query name for bedpe 
 		samtools sort -n -@ $threads -o ${1}.bam2 ${1}_filtered.bam
+		samtools index -@ $threads ${1}_filtered.bam
 		bamCoverage --binSize 10 -p $threads --normalizeUsing CPM -b ${1}_filtered.bam -o ${1}.bw
 		# bam2bedpe
 		bamToBed -bedpe -i ${1}.bam2 > ${1}.bedpe
