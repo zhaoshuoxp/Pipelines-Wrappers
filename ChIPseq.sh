@@ -142,6 +142,7 @@ sam_bam_bed(){
 		rm ${1}_srt.bam ${1}.bam2 ${1}.bedpe picard.jar
 	fi
 	rm ${1}.bam ${1}.sam
+	samtools index -@ $threads ${1}_filtered.bam
 	bamCoverage --binSize 10 -p $threads --normalizeUsing CPM -b ${1}_filtered.bam -o ${1}.bw
 }
 
@@ -157,7 +158,7 @@ chromap_total(){
 		tail -n 14 nohup.out >> ./logs/${1}_align.log
 		awk 'substr($1,1,3)=="chr"' ${1}_pe.bed > ${1}_pri.bed
 		len=$(gunzip -c $3 |head -n2|tail -n1|awk '{print length($0)}')
-		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
+		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$4,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
 	fi
 	factor=$(wc -l ${1}_pri.bed|awk '{print 1000000/$1}')
 	genomeCoverageBed -scale $factor -i ${1}_pri.bed -g $chromsize -bg > ${1}.bdg
