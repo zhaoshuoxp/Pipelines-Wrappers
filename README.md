@@ -3,7 +3,7 @@
 -----
 This repository has the following combined shell/awk/python/R scripts which can be used for High-throughput sequecning data analysis.
 
- * [ATACseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#atacseqsh): bulk ATACseq pipeline, from fastq to open chromatin regions.
+ * [ATACseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#atacseqsh): bulk ATACseq and CUT&TAG pipeline, from fastq to open chromatin regions/peaks.
  * [ChIPseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chipseqsh): ChIPseq pipeline, from fastq to peak calling step.
  * [CutRun.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cutrunsh): CUT&RUN pipeline, from fastq to peak calling step.
  * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differential expressed genes.
@@ -25,6 +25,8 @@ This repository has the following combined shell/awk/python/R scripts which can 
 ## ATACseq.sh
 
 This script will QC fastq files and align reads to the reference genome build with Bowtie2 or chromap, depending on the species selection passed by -g or the index and other required files passed by -i, -b and -c,  convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
+
+> This script works for both ATACseq and CUT&TAG.
 
 #### Input
 Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
@@ -59,13 +61,13 @@ chmod 755 ATACseq.sh
 ./ATACseq.sh -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
-Alternatively, you may use chromap aligner to speed up the processing:
+Alternatively, you may use [chromap](https://github.com/haowenz/chromap) aligner to speed up the processing:
 
 ```shell
 ./ATACseq.sh -c -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
-
+> chromap is recomended for most cases, as it is ultra fast and outputs a little bit less (<5%) aligned reads.
 
 ####  Output
 
@@ -80,6 +82,8 @@ All results will be store in current (./) directory.
 * macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will be called by default. In addition, {prefix}_broad_filtered.bed is the peaks file with blacklist filtered.
 * fastqc: the report(s) of fastqc
 * logs: running logs
+
+> No bam files and trimmed fastq files will be generated with chromap runs.
 
 
 
@@ -140,6 +144,8 @@ All results will be store in current (./) directory.
 * fastqc: the report(s) of fastqc
 * logs: running logs
 
+> No bam files and trimmed fastq files will be generated with chromap runs.
+
 
 
 
@@ -158,7 +164,7 @@ macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test
 
 test_se.bed and test_filtered.bam can also be used in BED or BAM mode of macs2.
 
-See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) and [SICER](https://home.gwu.edu/~wpeng/Software.htm) or [SICERpy](https://github.com/dariober/SICERpy) (for Histone Mods peak calling).
+See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) and [SICER](https://zanglab.github.io/SICER2/) (for Histone Mods peak calling).
 
 
 
