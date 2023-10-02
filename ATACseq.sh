@@ -41,10 +41,8 @@ help(){
   Usage: ATAC.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Paired-end fastq files ###
-  This script will QC fastq files and align reads to reference genome build with Bowtie2 or chromap, depending on the species passed by -g or the index and other required files passed by -i, -b and -c, 
-  convert alignments to filtered BAM/BED and bigwig,
-  then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
-  All results will be store in current (./) directory.
+  This script will QC fastq files and align reads to reference genome build with Bowtie2 or chromap, depending on the species passed by -g or the index and other required files passed by -i, -b and -c, convert alignments to filtered BAM/BED and bigwig, then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
+  This script works for both ATACseq and CUT&TAG. All results will be store in current (./) directory.
   ### python3/cutadapt/fastqc/bowtie2/samtools/bedtools/deeptools/macs2>=2.1.1 required ###
 
   Options:
