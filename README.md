@@ -128,7 +128,7 @@ chmod 755 ChIPseq.sh
 Alternatively, you may use chromap aligner to speed up the processing :
 
 ```shell
-./ChIPseq.sh -c -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+./ChIPseq.sh -c -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
 ####  Output
@@ -157,7 +157,7 @@ All results will be store in current (./) directory.
 test_pe.bed (and input_pe.bed) can be used for macs2 peak calling in BEDPE mode:
 
 ```shell
-macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test
+macs2 callpeak -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test
 ```
 
 > --broad is recommended for histone modifications.
@@ -210,7 +210,7 @@ chmod 755 CutRun.sh
 Alternatively, you may use chromap aligner to speed up the processing :
 
 ```shell
-./CutRun.sh -c -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
+./CutRun.sh -c -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
 ####  Output
@@ -238,14 +238,14 @@ All results will be store in current (./) directory.
 test_pe.bed (and input_pe.bed) can be used for macs2 peak calling in BEDPE mode:
 
 ```shell
-macs2 callpeaks -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test
+macs2 callpeak -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test
 ```
 
 > --broad is recommended for histone modifications.
 
 test_se.bed and test_filtered.bam can also be used in BED or BAM mode of macs2.
 
-See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) and [SICER](https://home.gwu.edu/~wpeng/Software.htm) or [SICERpy](https://github.com/dariober/SICERpy) (for Histone Mods peak calling).
+See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) and [SICER](https://zanglab.github.io/SICER2/) (for Histone Mods peak calling).
 
 
 
