@@ -2,7 +2,7 @@
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
-requires=("cutadapt" "python3" "bowtie2" "fastqc" "samtools" "macs2" "bedtools" "bamCoverage" "chromap")
+requires=("cutadapt" "python3" "bowtie2" "fastqc" "samtools" "macs2" "bedtools" "bamCoverage" "chromap" "genomeCoverageBed" "bedSort" "bedGraphToBigWig")
 for i in ${requires[@]};do
 	which $i &>/dev/null || { echo $i not found; exit 1; }
 done
@@ -34,6 +34,7 @@ bklt_url_hg38='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/list
 bklt_url_mm10='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/mm10-blacklist.v2.bed.gz'
 # Picard
 picard_url='https://github.com/broadinstitute/picard/releases/download/3.1.0/picard.jar'
+picard_path='/nfs/baldar/quanyiz/app/picard.jar'
 
 # help message
 help(){
@@ -110,9 +111,12 @@ sam_bam_bed(){
 	# paired-end CMD
 	else
 		# download picard.jar for PE duplicates removal
-		wget $picard_url
+		if [ ! -e $picard_path ];then
+			wget $picard_url
+			picard_path=./picard.jar
+		fi
 		# mark duplicates
-		java -jar picard.jar MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
+		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_mkdup.bam >> ./logs/${1}_align.log
 		# remove chrM alignments
@@ -129,7 +133,7 @@ sam_bam_bed(){
 		bamToBed -bedpe -i ${1}.bam2 > ${1}.bedpe
 		bamToBed -i ${1}_filtered.bam > ${1}.bed
 		# clean
-		rm ${1}_srt.bam ${1}.bam2 picard.jar 
+		rm ${1}_srt.bam ${1}.bam2 #picard.jar 
 	fi
 	rm ${1}.bam ${1}.sam ${1}_chrM.bam 
 	# convert filtered BAM to CPM normalized bigWig with deeptools
