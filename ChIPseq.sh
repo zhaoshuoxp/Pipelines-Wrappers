@@ -2,7 +2,7 @@
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
-requires=("cutadapt" "python3" "bwa" "fastqc" "samtools" "bedtools" "bamCoverage" "chromap")
+requires=("cutadapt" "python3" "bwa" "fastqc" "samtools" "bedtools" "bamCoverage" "chromap" "genomeCoverageBed" "bedSort" "bedGraphToBigWig")
 for i in ${requires[@]};do
 	which $i &>/dev/null || { echo $i not found; exit 1; }
 done
@@ -10,7 +10,7 @@ done
 #### DEFAULT CONFIGURATION ###
 # default Paired-end mod
 mod='pe'
-aln='chromap'
+aln='bwa'
 # default BWA mem algorithm
 alg='mem'
 # default TruSeq adapters
@@ -33,6 +33,7 @@ chromszize_hg38='/nfs/baldar/quanyiz/genome/hg38/hg38.chrom.sizes'
 chromszize_mm10='/nfs/baldar/quanyiz/genome/mm10/mm10.chrom.sizes'
 # Picard
 picard_url='https://github.com/broadinstitute/picard/releases/download/3.1.0/picard.jar'
+picard_path='/nfs/baldar/quanyiz/app/picard.jar'
 
 # help message
 help(){
@@ -110,24 +111,31 @@ sam_bam_bed(){
 		# samtools rmdup module for SE duplicates removal
 		samtools rmdup -s ${1}_srt.bam ${1}_rm.bam
 		echo 'flagstat after rmdup:' >> ./logs/${1}_align.log
+		samtools index -@ $threads ${1}_srt.bam
 		samtools flagstat -@ $threads ${1}_rm.bam >> ./logs/${1}_align.log
 		# filter out unmapped/failedQC/secondary/duplicates alignments
-		samtools view -@ $threads -f 2 -F 1796 -b -o ${1}_filtered.bam ${1}_rm.bam
+		samtools index -@ $threads ${1}_rm.bam
+		samtools view -@ $threads -F 1796 -b -o ${1}_filtered.bam ${1}_rm.bam
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
+		samtools index -@ $threads ${1}_filtered.bam
 		# clean
-		rm ${1}_rm.bam
+		rm ${1}_rm.bam ${1}_rm.bam.bai
 	# paired-end CMD
 	else
 		# download picard.jar for PE duplicates removal
-		wget $picard_url
+		if [ ! -e $picard_path ];then
+			wget $picard_url
+			picard_path=./picard.jar
+		fi
 		# mark duplicates
-		java -jar picard.jar MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
+		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_mkdup.bam >> ./logs/${1}_align.log
 		# filter our unmapped/failedQC/unpaired/duplicates/secondary alignments
 		samtools view -@ $threads -f 2 -F 1804 -b -o ${1}_filtered.bam ${1}_mkdup.bam
+		samtools index -@ $threads ${1}_filtered.bam
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
@@ -139,10 +147,9 @@ sam_bam_bed(){
 		# bedpe to standard PE bed for macs2 peak calling (-f BEDPE)
 		cut -f1,2,6 ${1}.bedpe > ${1}_pe.bed
 		# clean
-		rm ${1}_srt.bam ${1}.bam2 ${1}.bedpe picard.jar
+		rm ${1}_srt.bam ${1}.bam2 ${1}.bedpe #picard.jar
 	fi
 	rm ${1}.bam ${1}.sam
-	samtools index -@ $threads ${1}_filtered.bam
 	bamCoverage --binSize 10 -p $threads --normalizeUsing CPM -b ${1}_filtered.bam -o ${1}.bw
 }
 
