@@ -103,6 +103,7 @@ sam_bam_bed(){
 		samtools idxstats ${1}_rm.bam | cut -f 1 |grep -v M | xargs samtools view -b -@ $threads -o ${1}_chrM.bam ${1}_rm.bam
 		# filter out unmapped/failedQC/secondary/duplicates alignments
 		samtools view -@ $threads -f 2 -F 1796 -b -o ${1}_filtered.bam ${1}_chrM.bam
+		samtools index -@ $threads ${1}_filtered.bam
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
@@ -124,6 +125,7 @@ sam_bam_bed(){
 		samtools idxstats ${1}_mkdup.bam | cut -f 1 |grep -v M | xargs samtools view -b -@ $threads -o ${1}_chrM.bam ${1}_mkdup.bam
 		# filter our unmapped/failedQC/unpaired/duplicates/secondary alignments
 		samtools view -@ $threads -f 2 -F 1804 -b -o ${1}_filtered.bam ${1}_mkdup.bam
+		samtools index -@ $threads ${1}_filtered.bam
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
