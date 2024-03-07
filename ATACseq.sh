@@ -196,7 +196,7 @@ chromap_total(){
 	echo "MACS2 version >= 2.1.1 required!"
 	if [ $2 = 'se' ];then
 		mv ../${1}_pri.bed ../${1}_se.bed
-		macs2 callpeak -t ../${1}_se.bed -g $sp -n ${1} -f BED --keep-dup all --broad -B
+		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --broad --nomodel --shift -37 --extsize 73 -B
 	else
 		mv ../${1}_pri.bed ../${1}_pe.bed 
 		macs2 callpeak -t ../${1}_pe.bed -g $sp -n ${1} -f BEDPE --keep-dup all --broad -B
