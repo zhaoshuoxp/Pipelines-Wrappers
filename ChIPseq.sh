@@ -120,6 +120,7 @@ sam_bam_bed(){
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
 		samtools index -@ $threads ${1}_filtered.bam
+		bamToBed -i ${1}_filtered.bam > ${1}_se.bed
 		# clean
 		rm ${1}_rm.bam ${1}_rm.bam.bai
 	# paired-end CMD
