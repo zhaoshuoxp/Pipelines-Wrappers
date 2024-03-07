@@ -99,10 +99,10 @@ sam_bam_bed(){
 		echo 'flagstat after rmdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_rm.bam >> ./logs/${1}_align.log
 		# remove chrM alignments
-		samtools index $threads ${1}_rm.bam 
+		samtools index -@ $threads ${1}_rm.bam 
 		samtools idxstats ${1}_rm.bam | cut -f 1 |grep -v M | xargs samtools view -b -@ $threads -o ${1}_chrM.bam ${1}_rm.bam
 		# filter out unmapped/failedQC/secondary/duplicates alignments
-		samtools view -@ $threads -f 2 -F 1796 -b -o ${1}_filtered.bam ${1}_chrM.bam
+		samtools view -@ $threads -F 1796 -b -o ${1}_filtered.bam ${1}_chrM.bam
 		samtools index -@ $threads ${1}_filtered.bam
 		bamToBed -i ${1}_filtered.bam > ${1}_se.bed
 		echo >> ./logs/${1}_align.log
