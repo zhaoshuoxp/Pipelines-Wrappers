@@ -69,7 +69,7 @@ QC_mapping(){
 		# FastQC 
 		fastqc -f fastq -t $threads -o fastqc $3 
 		# Nextera adapter trimming
-		cutadapt -m 30 -j $threads -a $aA -g $gG -o ${2}_trimmed.fastq.gz $3 > ./logs/${2}_cutadapt.log
+		cutadapt -m 30 -j $threads -a $aA -o ${2}_trimmed.fastq.gz $3 > ./logs/${2}_cutadapt.log
 		# Bowtie2 align
 		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index -U ${2}_trimmed.fastq.gz -S ${2}.sam
 		echo 'Bowtie2 mapping summary:' > ./logs/${2}_align.log
@@ -79,7 +79,7 @@ QC_mapping(){
 		# FastQC
 		fastqc -f fastq -t $threads -o fastqc $3 $4
 		# TruSeq adapter trimming
-		cutadapt -m 30 -j $threads -a $aA -A $aA -g $gG -G $gG -o ${2}_trimmed_R1.fastq.gz -p ${2}_trimmed_R2.fastq.gz $3 $4 > ./logs/${2}_cutadapt.log
+		cutadapt -m 30 -j $threads -a $aA -A $aA -o ${2}_trimmed_R1.fastq.gz -p ${2}_trimmed_R2.fastq.gz $3 $4 > ./logs/${2}_cutadapt.log
 		# Bowtie2 align
 		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index -1 ${2}_trimmed_R1.fastq.gz -2 ${2}_trimmed_R2.fastq.gz -S ${2}.sam
 		echo 'Bowtie2 mapping summary:' > ./logs/${2}_align.log
@@ -104,6 +104,7 @@ sam_bam_bed(){
 		# filter out unmapped/failedQC/secondary/duplicates alignments
 		samtools view -@ $threads -f 2 -F 1796 -b -o ${1}_filtered.bam ${1}_chrM.bam
 		samtools index -@ $threads ${1}_filtered.bam
+		bamToBed -i ${1}_filtered.bam > ${1}_se.bed
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
