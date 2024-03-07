@@ -168,8 +168,8 @@ peak_calling(){
 		# Blacklist filter 
 		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
 		cd ..
+		rm ${2}.bedpe ${2}.bed 
 	fi
-	rm ${2}.bedpe ${2}.bed 
 }
 
 chromap_total(){
