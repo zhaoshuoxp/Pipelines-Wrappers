@@ -118,7 +118,9 @@ sam_bam_bed(){
 			picard_path=./picard.jar
 		fi
 		# mark duplicates
-		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
+		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ~/${1}_mkdup.bam -M ~/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
+		mv ~/${1}_mkdup.bam ./
+		mv ~/${1}_dup.log ./logs/
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_mkdup.bam >> ./logs/${1}_align.log
 		# remove chrM alignments
