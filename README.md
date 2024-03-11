@@ -9,7 +9,6 @@ This repository has the following combined shell/awk/python/R scripts which can 
  * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differential expressed genes.
  * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
  * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
- * [GATK_HF.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#gatk_hfsh): variants calling by [GATK](https://software.broadinstitute.org/gatk/), from fastq to vcf.
  * [trans_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#trans_assemblesh): *de novo* transcript assembly, from fastq to GTF.
  * [PLAR.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#plarsh): *de novo* [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR) lncRNA discovery pipeline wrapper.
  * [rRNA_dep.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rrna_depsh): ribosomal RNA depletion from fastq files.
@@ -495,35 +494,8 @@ All results will be store in current (./) directory.
 
 * {prefix}_rRNA.log: mapping log.
 
-  
 
-------
 
-## GATK_HF.sh
-
-This script is a wrapper of variants calling by [GATK](https://software.broadinstitute.org/gatk/).
-
-#### Input
-* Paired-end fastq files.
-
-#### Usage
-
-```shell
-./GATK_HF.sh fastq1 fastq2
-```
-
-> NOTE:
-Edit the script and mofiy $hg19, $picard, $gatk, $gatk_bundle_hg19, $gatk_ref_hg19 PATH.
-
-See more about [GATK Best Practices](https://software.broadinstitute.org/gatk/best-practices/).
-
-#### Output
-
-All results will be store in current (./) directory.
-
-* GVCF and VCF
-
-  
 
 
 ------
