@@ -2,7 +2,7 @@
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
-requires=("cutadapt" "python3" "bwa" "fastqc" "samtools" "bedtools" "bamCoverage" "chromap" "genomeCoverageBed" "bedSort" "bedGraphToBigWig")
+requires=("cutadapt" "python3" "bowtie2" "bwa" "fastqc" "samtools" "bedtools" "bamCoverage" "chromap" "genomeCoverageBed" "bedSort" "bedGraphToBigWig")
 for i in ${requires[@]};do
 	which $i &>/dev/null || { echo $i not found; exit 1; }
 done
@@ -22,6 +22,9 @@ threads=1
 bwaindex_hg19='/nfs/baldar/quanyiz/genome/hg19/BWAindex/hg19bwa'
 bwaindex_hg38='/nfs/baldar/quanyiz/genome/hg38/BWAindex/hg38bwa'
 bwaindex_mm10='/nfs/baldar/quanyiz/genome/mm10/BWAindex/mm10bwa'
+bw2index_hg19='/nfs/baldar/quanyiz/genome/hg19/Bowtie2index/hg19.bowtie2'
+bw2index_hg38='/nfs/baldar/quanyiz/genome/hg38/Bowtie2index/hg38bowtie2'
+bw2index_mm10='/nfs/baldar/quanyiz/genome/mm10/Bowtie2index/mm10.bowtie2'
 chromapindex_hg19='/nfs/baldar/quanyiz/genome/hg19/Chromapindex/hg19'
 chromapindex_hg38='/nfs/baldar/quanyiz/genome/hg38/Chromapindex/hg38'
 chromapindex_mm10='/nfs/baldar/quanyiz/genome/mm10/Chromapindex/mm10'
@@ -41,7 +44,7 @@ help(){
   Usage: ChIPseq.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Single-end or Paired-end fastq files ###
-  This script will QC fastq files and align reads to reference genome with BWA or chromap, depending on the species passed by -g or the index passed by -i, 
+  This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN), depending on the species passed by -g or the index passed by -i, 
   convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
   All results will be store in current (./) directory.
   ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
@@ -54,9 +57,11 @@ help(){
     -s Single-end mod (Paired-end default)
     -n Nextera adapters (Truseq default)
     -a Use BWA aln algorithm (BWA mem default)
+    -u CUR&RUN mode, will be paired-end mode and use bowtie2 aligner with --dovetail
+    -b [str] Custom Bowtie2 index PATH  (valid only with -b option)
     -c Using chromap to process FASTQ instead of canonical bowtie2
-    -i [str] Custom chromap genome index (only valid with -c option)
-    -r [str] Custom chromap genome reference (only valid with -c option)
+    -i [str] Custom chromap genome index (valid only with -c option)
+    -r [str] Custom chromap genome reference (valid only with -c option)
     -z [str] Custom chromosome size table
     -h Print this help message
 
@@ -70,9 +75,9 @@ QC_mapping(){
 	if [ $1 = 'se' ];then
 		# single-end CMD
 		# FastQC 
-		fastqc -f fastq -t $threads -o fastqc $4 
+		#fastqc -f fastq -t $threads -o fastqc $4 
 		# TruSeq adapter trimming
-		cutadapt -m 30 -j $threads -a $aA -g $gG -o ${3}_trimmed.fastq.gz $4 > ./logs/${3}_cutadapt.log
+		cutadapt -m 30 -j $threads -a $aA -o ${3}_trimmed.fastq.gz $4 > ./logs/${3}_cutadapt.log
 		# BWA aln 
 		if [ $2 = 'aln' ];then
 			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed.fastq.gz > ${3}.sai
@@ -85,16 +90,19 @@ QC_mapping(){
 	else
 		# paired-end CMD
 		# FastQC
-		fastqc -f fastq -t $threads -o fastqc $4 $5
+		#fastqc -f fastq -t $threads -o fastqc $4 $5
 		# TruSeq adapter trimming
-		cutadapt -m 30 -j $threads -a $aA -A $aA -g $gG -G $gG -o ${3}_trimmed_R1.fastq.gz -p ${3}_trimmed_R2.fastq.gz $4 $5 > ./logs/${3}_cutadapt.log
+		cutadapt -m 30 -j $threads -a $aA -A $aA -o ${3}_trimmed_R1.fastq.gz -p ${3}_trimmed_R2.fastq.gz $4 $5 > ./logs/${3}_cutadapt.log
 		# BWA aln 
 		if [ $2 = 'aln' ];then
 			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed_R1.fastq.gz > ${3}_R1.sai
 			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed_R2.fastq.gz > ${3}_R2.sai
 			bwa sampe $bwaindex ${3}_R1.sai ${3}_R2.sai ${3}_trimmed_R1.fastq.gz ${3}_trimmed_R2.fastq.gz  > ${3}.sam
 			rm ${3}_R1.sai ${3}_R2.sai
-		# BWA mem
+		# CUT&RUN mode
+		elif [ $2 = 'bowtie2' ]; then
+			bowtie2 --dovetail --threads $threads -X 1000 -x $bw2index -1 ${3}_trimmed_R1.fastq.gz -2 ${3}_trimmed_R2.fastq.gz -S ${3}.sam
+		# ChIPseq mode
 		else
 			bwa mem -M -t $threads $bwaindex ${3}_trimmed_R1.fastq.gz ${3}_trimmed_R2.fastq.gz > ${3}.sam
 		fi
@@ -131,7 +139,9 @@ sam_bam_bed(){
 			picard_path=./picard.jar
 		fi
 		# mark duplicates
-		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ${1}_mkdup.bam -M ./logs/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
+		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ~/${1}_mkdup.bam -M ~/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
+		mv ~/${1}_dup.log ./logs/
+		mv ~/${1}_mkdup.bam ./
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_mkdup.bam >> ./logs/${1}_align.log
 		# filter our unmapped/failedQC/unpaired/duplicates/secondary alignments
@@ -181,21 +191,24 @@ if [ $# -lt 1 ];then
 	exit 1
 fi
 
-while getopts "g:x:t:sacnp:z:r:i:h" arg
+while getopts "g:x:t:sacnp:z:r:i:hub:" arg
 do
 	case $arg in
 		g) if [ $OPTARG = "hg19" ]; then
 			bwaindex=$bwaindex_hg19
+			bw2index=$bw2index_hg19
 			chromapindex=$chromapindex_hg19
 			chromapref=$chromapref_hg19
 			chromsize=$chromszize_hg19
 		   elif [ $OPTARG = "hg38" ]; then
 			bwaindex=$bwaindex_hg38
+			bw2index=$bw2index_hg38
 			chromapindex=$chromapindex_hg38
 			chromapref=$chromapref_hg38
 			chromsize=$chromszize_hg38
 		   elif [ $OPTARG = "mm10" ]; then
 			bwaindex=$bwaindex_mm10
+			bw2index=$bw2index_mm10
 			chromapindex=$chromapindex_mm10
 			chromapref=$chromapref_mm10
 			chromsize=$chromszize_mm10
@@ -218,6 +231,9 @@ do
 		z) chromsize=$OPTARG;;
 		r) chromapref=$OPTARG;;
 		i) chromapindex=$OPTARG;;
+		u) alg='bowtie2'
+			mod='pe';;
+		b) bw2index=$OPTARG;;
 		h) help ;;
 		?) help
 			exit 1;;
@@ -242,9 +258,9 @@ main(){
 		mkdir logs
 	fi
 
-	if [ ! -d fastqc ];then 
-		mkdir fastqc
-	fi 
+	#if [ ! -d fastqc ];then 
+	#	mkdir fastqc
+	#fi 
 	
 	if [ $aln = 'chromap' ];then
 		chromap_total $prefix $mod $1 $2
