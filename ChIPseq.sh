@@ -63,7 +63,6 @@ help(){
     -c Using chromap to process FASTQ instead of canonical bowtie2/bwa
     -i [str] Custom chromap genome index (valid only with -c option)
     -r [str] Custom chromap genome reference (valid only with -c option)
-
     -h Print this help message
 
 EOF
