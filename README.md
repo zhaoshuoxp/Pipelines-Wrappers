@@ -106,19 +106,18 @@ help message can be shown by `ChIPseq.sh -h`
 Usage: ChIPseq.sh <options> -g <hg38|hg19|mm10> <reads1>|..<reads2> 
   Options:
     -g [str] Genome build selection <hg38|hg19|mm10>
-    -x [str] Custom BWA index PATH
+    -x [str] Custom BWA index PATH (valid only without -g option)
+    -z [str] Custom chromosome size table (valid only without -g option)
     -p [str] Prefix of output
     -t [int] Threads (1 default)
     -s Single-end mod (Paired-end default)
     -n Nextera adapters (Truseq default)
     -a Use BWA aln algorithm (BWA mem default)
     -u CUR&RUN mode, will be paired-end mode and use bowtie2 aligner with --dovetail
-    -b [str] Custom Bowtie2 index PATH (valid only with -b option)
+    -b [str] Custom Bowtie2 index PATH  (valid only with -b option)
     -c Using chromap to process FASTQ instead of canonical bowtie2/bwa
     -i [str] Custom chromap genome index (valid only with -c option)
     -r [str] Custom chromap genome reference (valid only with -c option)
-    -z [str] Custom chromosome size table
-    -h Print this help message
 ```
 
 #### Example
