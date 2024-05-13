@@ -5,7 +5,6 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
  * [ATACseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#atacseqsh): bulk ATACseq and CUT&TAG pipeline, from fastq to open chromatin regions/peaks.
  * [ChIPseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chipseqsh): ChIPseq pipeline, from fastq to peak calling step.
- * [CutRun.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cutrunsh): CUT&RUN pipeline, from fastq to peak calling step.
  * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differential expressed genes.
  * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
  * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
