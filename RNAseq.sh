@@ -145,13 +145,17 @@ main(){
 	mv *SJ.out.tab BAM/
 
 	cat >deseq.r<<-EOF
-	#!/bioware/source/R-4.0.3/bin/Rscript
+	#!/usr/bin/env Rscript
 	library("DESeq2")
 	options<-commandArgs(trailingOnly = T)
 
 	data <- read.table(options[1], header=T, quote="\t", check.names=F, skip=1)
 	meta <- read.table(options[2], header=T, quote="\t")
-
+	
+	counTpm <- function(counts, lengths) {
+		rate <- counts / lengths
+		rate / sum(rate) * 1e6 }
+	
 	names(data)[7:ncol(data)] ->sample
 	sub(pattern=".bam", replacement="", sample) ->sampleNames
 	if (all(meta\$Sample==sampleNames)){
@@ -159,18 +163,24 @@ main(){
 		names(data)[7:ncol(data)] <- sampleNames
 		countData <- as.matrix(data[7:ncol(data)])
 		rownames(countData) <- data\$Geneid
+
+		# export TPM values for all genes
+		counTpm(countData,data$Length)->tpm
+		write.table(tpm, "allgenes_TPM.txt", row.names=T, sep="\t", quote=F)
+
 		database <- data.frame(name=sampleNames, group=meta\$Group)
 		dds <- DESeqDataSetFromMatrix(countData, colData=database, design= ~ group)
 		dds <- dds[ rowSums(counts(dds)) > 1, ]
 		dds <- DESeq(dds)
 		res <- results(dds)
+
 		# Only export normalized Exp values
 		#res <- results(dds, contrast=c('group',"treat","control"))
 		#write.table(res, "DEG.txt")
-		#resdata <- merge(as.data.frame(res), as.data.frame(counts(dds, normalized=TRUE)),by="row.names",sort=FALSE)
-		resdata <- as.data.frame(counts(dds, normalized=TRUE))
+		resdata <- merge(as.data.frame(res), as.data.frame(counts(dds, normalized=TRUE)),by="row.names",sort=FALSE)
+		#resdata <- as.data.frame(counts(dds, normalized=TRUE))
 		names(resdata)[names(resdata)=="Row.names"]="Genes"
-		write.table(resdata, "all_genes_exp.txt", row.names=F, sep="\t", quote=F)
+		write.table(resdata, "allgenes_DESeq2.txt", row.names=F, sep="\t", quote=F)
 
 	}else{
 		stop("Sample names in meta.txt don't match featureCount output!")
