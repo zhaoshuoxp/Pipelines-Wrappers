@@ -251,7 +251,8 @@ All results will be store in current (./) directory.
 * BAM/{prefix}.bam: STAR output, accepted alignments.
 * BAM/SJ.out.tab: STAR output, splice junctions.
 * featureCounts.txt: featureCounts output, raw fragments count.
-* all_genes_exp.txt: size-factor normalized gene expression levels with *P* values.
+* allgenes_DESeq2.txt: size-factor normalized vaules of expressed genes with their *DESeq2* test results.
+* allgenes_TPM.txt: Transcripts-Per-Million values of all genes in the reference.
 * logs: running logs and fastqc reports.
 
 > NOTE:
