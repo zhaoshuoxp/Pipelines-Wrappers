@@ -132,6 +132,7 @@ sam_bam_bed(){
 		Mreads=$(samtools idxstats ${1}_mkdup.bam|grep ^chrM|awk '{print $2}')
 		fra=$(samtools idxstats ${1}_mkdup.bam|awk '{sum+=$2}END{print "'"$Mreads"'"*100/sum}')
 		echo  "chrM reads = "$Mreads","$fra"%"
+		echo  "chrM reads = "$Mreads","$fra"%" >>  ./logs/${1}_align.log
 		# filter our unmapped/failedQC/unpaired/duplicates/secondary alignments
 		samtools view -@ $threads -f 2 -F 1804 -b -o ${1}_filtered.bam ${1}_chrM.bam
 		samtools index -@ $threads ${1}_filtered.bam
