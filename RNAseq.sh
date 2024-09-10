@@ -165,7 +165,7 @@ main(){
 		rownames(countData) <- data\$Geneid
 
 		# export TPM values for all genes
-		counTpm(countData,data$Length)->tpm
+		counTpm(countData,data\$Length)->tpm
 		write.table(tpm, "allgenes_TPM.txt", row.names=T, sep="\t", quote=F)
 
 		database <- data.frame(name=sampleNames, group=meta\$Group)
