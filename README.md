@@ -22,13 +22,13 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
 ## ATACseq.sh
 
-This script will QC fastq files and align reads to the reference genome build with Bowtie2 or chromap, depending on the species selection passed by -g or the index and other required files passed by -i, -b and -c,  convert to filtered BAM/BED and bigwig format, then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
+This script checks quality controls of fastq files, then aligns reads to the specified reference genome using Bowtie2 or chromap, depending on the selected species passed by -g or the provided index and other necessary files specified by -i, -b, and -c. It converts the alignments to filtered BAM/BED and bigwig formats, and subsequently identifies peaks using MACS2 in BEDPE mode following Tn5 shifting.
 
 > This script works for both ATACseq and CUT&TAG.
 
 #### Input
 Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
-> Single-end sequencing data is also supported with -s, although it is not recommended.
+> Single-end sequencing data is also supported with -s, but it is not recommended.
 
 #### Options
 
@@ -89,7 +89,7 @@ All results will be store in current (./) directory.
 
 ## ChIPseq.sh
 
-This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN), depending on the species passed by -g or the index passed by -i, convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
+This script performs quality control on fastq files and aligns reads to a reference genome using either BWA or chromap (bowtie2 for CUT&RUN), depending on the species specified with -g or the index provided with -i. It then converts alignments to filtered BAM/BED and bigwig formats but does NOT perform peak calling.
 
 > This script works for both ChIPseq and CUT&RUN.
 
@@ -170,7 +170,7 @@ See more about [MACS2](https://github.com/taoliu/MACS) (for TFs peak calling) an
 
 ## RNAseq.sh
 
-This script will QC fastq files and align reads to the reference genome and transcriptome with STAR, depending on the species selection passed by -s or the index and GTF passed by -i and -g, featureCounts and DESeq2 will be used for reads counting and differential expressed genes discovery,
+This script performs quality control on fastq files, aligning reads to either the reference genome or transcriptome using STAR, based on the species selected via -s, or using the specified index and GTF files via -i and -g. Reads are counted using featureCounts, and differential expression analysis is conducted using DESeq2 to discover differentially expressed genes.
 
 #### Input
 
@@ -257,7 +257,7 @@ All results will be store in current (./) directory.
 
 > NOTE:
 Sample names in meta.txt have to match the featureCounts output exactly, check your text or use this script to create it.
-This script cannot automatically run the DEG discovery pair-wisely if you have >2 groups. Either edit deseq.r or analyze it manually in R. A online tool might be useful: [iDEP](http://bioinformatics.sdstate.edu/idep/).
+This script can NOT automatically run the DEG discovery pair-wisely if you have >2 groups. Either edit deseq.r or analyze it manually in R. A online tool might be useful: [iDEP](http://bioinformatics.sdstate.edu/idep/).
 
 
 
