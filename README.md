@@ -27,7 +27,7 @@ This script runs cellranger automatically for all samples in the specified fastq
 
 The script can also perform aggregations for ATAC and multiome data using the `-a` parameter, and optionally `-c` to designate an aggregation csv file. How to generate aggregation csv file? [ATAC](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/using/aggr#csv_setup), [multiome](https://www.10xgenomics.com/support/software/cell-ranger-arc/latest/analysis/aggregating-multiple-gem-wells-aggr#setting-up-an-aggregation-csv)
 
-> dData type (-m) is also required for aggregation (-a). If no aggregation csv file designated, ALL folders/samples in the provided path will be aggregated.
+> Data type (-m) is also required for aggregation (-a). If no aggregation csv file designated, ALL folders/samples in the provided path will be aggregated.
 
 #### Input
 
