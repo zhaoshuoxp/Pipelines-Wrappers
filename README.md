@@ -23,15 +23,13 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
 ## cellranger.sh
 
-This script runs cellranger automatically for all samples in the specified fastq directory.Sample names are inferred from the fastq filenames, i.e \<prefix\>_S1_L001_R1_001.fastq.gz. Outputs are saved in the current directory with filenames based on the inferred prefix. The script supports 10x genomic RNA, ATAC, and multiome based on the specified data type (-m). The script can also perform aggregations for ATAC and multiome data using the `-a` parameter, and optionally `-c` to generate an aggregation csv file. You can find more details on setting up the aggregation csv file for [ATAC](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/using/aggr#csv_setup) and [multiome](https://www.10xgenomics.com/support/software/cell-ranger-arc/latest/analysis/aggregating-multiple-gem-wells-aggr#setting-up-an-aggregation-csv).
+This script runs cellranger automatically for all samples in the specified fastq directory.Sample names are inferred from the fastq filenames, i.e \<prefix\>_S1_L001_R1_001.fastq.gz. Outputs are saved in the current directory with filenames based on the inferred prefix. The script supports 10x genomic RNA, ATAC, and multiome based on the specified data type (-m). The script can also perform aggregations for ATAC and multiome data using `-a` , and optionally `-c` to designate an aggregation csv file. You can find more details on setting up the aggregation csv file for [ATAC](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/using/aggr#csv_setup) and [multiome](https://www.10xgenomics.com/support/software/cell-ranger-arc/latest/analysis/aggregating-multiple-gem-wells-aggr#setting-up-an-aggregation-csv).
 
-The script can also perform aggregations for ATAC and multiome data using the `-a` parameter, and optionally `-c` to designate an aggregation csv file. How to generate aggregation csv file? [ATAC](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/using/aggr#csv_setup), [multiome](https://www.10xgenomics.com/support/software/cell-ranger-arc/latest/analysis/aggregating-multiple-gem-wells-aggr#setting-up-an-aggregation-csv)
-
-> Data type (-m) is also required for aggregation (-a). If no aggregation csv file designated, ALL folders/samples in the provided path will be aggregated.
+> Data type (-m) is also required for aggregation (-a). If no aggregation csv file designated, a csv file will be automatically generated and ALL folders/samples in the provided path will be aggregated.
 
 #### Input
 
-Paired-end FASTQ files following the cellranger demultiplexed naming conventions (cellranger mkfastq), all samples together in a directory,
+Paired-end FASTQ files following the cellranger demultiplexed naming conventions (cellranger mkfastq), all samples together in a directory.
 
 #### Options
 
@@ -64,14 +62,14 @@ chmod 755 cellranger.sh
 ./cellranger.sh -g mm10 -m atac -a /path/to/cellranger/count/output/with/all/samples/
 ```
 
-> Sequencing depth normalization is not recommended in most situations. For RNA data, merging the data matrix in Seurat/scanpy is a more efficient way.
+> Sequencing depth normalization is not recommended in most situations. For RNA data, aggregating the data matrix in Seurat/Scanpy is a more efficient way.
 
 ####  Output
 
 All results will be store in current (./) directory.
 
 * For indivdual cellranger count run, each samples will be stored in a filder named by their predicted prefixes.
-* For aggregation run, merged data will be stored in "aggr" folder and a aggr.csv will be created if no csv file designated.
+* For cellranger aggr run, aggregated data will be stored in "aggr" folder and a aggr.csv will be created if no csv file designated.
 
 > For more details of the cellranger output, see [RNA](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/outputs/cr-outputs-overview), [ATAC](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/using/count), and [Multiome](https://www.10xgenomics.com/support/software/cell-ranger-arc/latest/analysis/outputs/understanding-output)
 
