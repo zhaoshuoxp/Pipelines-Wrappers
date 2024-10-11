@@ -62,7 +62,7 @@ do
 				exit 1
 		   fi;;
 		m) if [ $OPTARG = "rna" ]; then
-			cellranger_path='cellranger7.2'
+			cellranger_path='cellranger'
 			ref_type='--transcriptome'
 			mod='rna'
 		   elif [ $OPTARG = "atac" ]; then
@@ -82,7 +82,7 @@ do
 		t) threads=$OPTARG;;
 		r) mem=$OPTARG;;
 		# use cellranger8.0.1
-		u) cellranger_path='cellranger'
+		u) cellranger_path='cellranger8'
 		   ref_type='--transcriptome'
 		   added_par='--create-bam true';;
 		a) aggr='aggr';;
