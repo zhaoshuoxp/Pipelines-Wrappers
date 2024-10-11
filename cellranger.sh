@@ -2,7 +2,7 @@
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
-requires=("cellranger-atac" "cellranger-arc" "cellranger" "cellranger7.2")
+requires=("cellranger-atac" "cellranger-arc" "cellranger" "cellranger8")
 for i in ${requires[@]};do
 	which $i &>/dev/null || { echo $i not found; exit 1; }
 done
