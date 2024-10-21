@@ -233,7 +233,7 @@ This script performs quality control on fastq files, aligning reads to either th
 
 #### Input
 
-* Paired-end fastq files with _R1/2.fastq.gz suffix all together in a directory, i.e.
+* Paired-end fastq files with _R1/2.fastq.gz or _1/2.fq.gz suffix all together in a directory, i.e.
 
 > Single-end not supported
 
