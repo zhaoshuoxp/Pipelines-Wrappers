@@ -98,11 +98,11 @@ do
 		i) STAR_idx=$OPTARG;;
 		p) shift $(($OPTIND - 1))
 		   echo -e "Sample\tGroup" > meta.txt
-		   files=($1/*.fastq.gz)
+		   files=($1/*.f*q.gz)
 		   for (( i=0; i<${#files[@]} ; i+=2 ))
 				do
 					filename=${files[i]##*/}
-					prefix=${filename%_R1*}
+					prefix=${filename%_*1.f*q.gz}
 					echo -e "$prefix\t" >> meta.txt
 				done
 		   vim meta.txt
@@ -121,11 +121,11 @@ main(){
 		mkdir logs
 	fi
 
-	files=($1/*.fastq.gz)
+	files=($1/*.f*q.gz)
 	for (( i=0; i<${#files[@]} ; i+=2 ))
 	do
 		filename=${files[i]##*/}
-		prefix=${filename%_R1*}
+		prefix=${filename%_*1.f*q.gz}
 		STAR_map ${files[i]} ${files[i+1]} $prefix
 		rm -r ${prefix}_STARtmp
 		bam=${bam}" "${prefix}.bam
