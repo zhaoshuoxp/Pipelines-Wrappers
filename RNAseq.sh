@@ -25,12 +25,12 @@ help(){
 	cat <<-EOF
   Usage: RNAseq.sh <options> -m meta.txt </PATH/to/fastq/>
 
-  ### INPUT: Paired-end fastq files with _R1/2.fastq.gz suffix, and a text file with meta information  ###
+  ### INPUT: Paired-end fastq files with _R1/2.fastq.gz or _1/2.fq.gz suffix, and a text file with meta information  ###
   This script will QC fastq files and align reads to the reference genome and transcriptome with STAR, depending on the species  passed by -s or the index and GTF passed by -i and -g,
   featureCounts and DESeq2 will be used for reads counting and differentially expressed genes test,
   All results will be store in current (./) directory.
   ### indice and GTF have to be the same assembly version ###
-  ### python3/cutadapt/fastqc/STAR>=2.7/R/featureCounts/DEseq2 required ###
+  ### python3/cutadapt/fastqc/STAR>=2.7.4a/R/featureCounts/DEseq2 required ###
 
   Options:
     -m [str] /PATH/to/meta.txt
