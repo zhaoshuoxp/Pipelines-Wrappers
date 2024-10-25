@@ -55,7 +55,7 @@ EOF
 
 STAR_map(){
 	# fastqc control
-	fastqc -f fastq -t $threads -o logs $1 $2
+	# fastqc -f fastq -t $threads -o logs $1 $2
 	# cutadapt--trim adaptors Truseq index
 	# python3 version required for -j
 	cutadapt -m 30 -j $threads -a $aA -A $aA -o ${3}_R1_trimmed.gz -p ${3}_R2_trimmed.gz $1 $2 > ./logs/${3}_cutadapt.log
@@ -127,7 +127,7 @@ main(){
 		filename=${files[i]##*/}
 		prefix=${filename%_*1.f*q.gz}
 		STAR_map ${files[i]} ${files[i+1]} $prefix
-		rm -r ${prefix}_STARtmp
+		rm -rf ${prefix}_STARtmp
 		bam=${bam}" "${prefix}.bam
 	done
 
@@ -166,22 +166,22 @@ main(){
 
 		# export TPM values for all genes
 		counTpm(countData,data\$Length)->tpm
-		write.csv(tpm, "Allgene_TPM.csv")
+		write.csv(tpm, "Allgene_TPM.csv", quote=F)
 
 		database <- data.frame(name=sampleNames, group=meta\$Group)
 		dds <- DESeqDataSetFromMatrix(countData, colData=database, design= ~ group)
 		dds <- dds[ rowSums(counts(dds)) > 1, ]
 		dds <- DESeq(dds)
 
-		groups<-unique(meta\$Group)
+		groups<-unique(as.data.frame(database)$group)
 		for (i in 1:(length(groups) - 1)) {
 			for (j in (i + 1):length(groups)) {
-			contrast <- c("condition", groups[i], groups[j])
+			contrast <- c("group", groups[i], groups[j])
 			res <- results(dds, contrast = contrast)
 			file_name <- paste0("DESeq2_", groups[i], "_vs_", groups[j], ".csv")
 			resdata <- merge(as.data.frame(res), tpm, by="row.names",sort=FALSE)
 			names(resdata)[names(resdata)=="Row.names"]="Genes"
-			write.csv(as.data.frame(resdata), file = file_name,row.names=F)
+			write.csv(as.data.frame(resdata), file = file_name,row.names=F,quote=F)
 		}}
 
 	}else{
