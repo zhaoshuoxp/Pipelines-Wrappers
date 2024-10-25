@@ -310,13 +310,13 @@ All results will be store in current (./) directory.
 * BAM/{prefix}.bam: STAR output, accepted alignments.
 * BAM/SJ.out.tab: STAR output, splice junctions.
 * featureCounts.txt: featureCounts output, raw fragments count.
-* allgenes_DESeq2.txt: size-factor normalized vaules of expressed genes with their *DESeq2* test results.
-* allgenes_TPM.txt: Transcripts-Per-Million values of all genes in the reference.
+* Allgene_TPM.csv: Transcripts-Per-Million values of all genes in the reference.
+* DESeq2_A_vs_B.csv: Pairwise DESeq2 test results for the groups specified in *meta.txt*, with gene TPM values.
 * logs: running logs and fastqc reports.
 
 > NOTE:
 Sample names in meta.txt have to match the featureCounts output exactly, check your text or use this script to create it.
-This script can NOT automatically run the DEG discovery pair-wisely if you have >2 groups. Either edit deseq.r or analyze it manually in R. A online tool might be useful: [iDEP](http://bioinformatics.sdstate.edu/idep/).
+This script automatically performs pairwise differential gene expression (DEG) analysis when there are more than two groups. A online tool might be useful: [iDEP](http://bioinformatics.sdstate.edu/idep/).
 
 
 
