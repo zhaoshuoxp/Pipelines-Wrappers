@@ -166,21 +166,23 @@ main(){
 
 		# export TPM values for all genes
 		counTpm(countData,data\$Length)->tpm
-		write.table(tpm, "allgenes_TPM.txt", row.names=T, sep="\t", quote=F)
+		write.csv(tpm, "Allgene_TPM.csv")
 
 		database <- data.frame(name=sampleNames, group=meta\$Group)
 		dds <- DESeqDataSetFromMatrix(countData, colData=database, design= ~ group)
 		dds <- dds[ rowSums(counts(dds)) > 1, ]
 		dds <- DESeq(dds)
-		res <- results(dds)
 
-		# Only export normalized Exp values
-		#res <- results(dds, contrast=c('group',"treat","control"))
-		#write.table(res, "DEG.txt")
-		resdata <- merge(as.data.frame(res), as.data.frame(counts(dds, normalized=TRUE)),by="row.names",sort=FALSE)
-		#resdata <- as.data.frame(counts(dds, normalized=TRUE))
-		names(resdata)[names(resdata)=="Row.names"]="Genes"
-		write.table(resdata, "allgenes_DESeq2.txt", row.names=F, sep="\t", quote=F)
+		groups<-unique(meta\$Group)
+		for (i in 1:(length(groups) - 1)) {
+			for (j in (i + 1):length(groups)) {
+			contrast <- c("condition", groups[i], groups[j])
+			res <- results(dds, contrast = contrast)
+			file_name <- paste0("DESeq2_", groups[i], "_vs_", groups[j], ".csv")
+			resdata <- merge(as.data.frame(res), tpm, by="row.names",sort=FALSE)
+			names(resdata)[names(resdata)=="Row.names"]="Genes"
+			write.csv(as.data.frame(resdata), file = file_name,row.names=F)
+		}}
 
 	}else{
 		stop("Sample names in meta.txt don't match featureCount output!")
