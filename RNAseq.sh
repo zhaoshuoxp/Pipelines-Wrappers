@@ -173,7 +173,7 @@ main(){
 		dds <- dds[ rowSums(counts(dds)) > 1, ]
 		dds <- DESeq(dds)
 
-		groups<-unique(as.data.frame(database)$group)
+		groups<-unique(as.data.frame(database)\$group)
 		for (i in 1:(length(groups) - 1)) {
 			for (j in (i + 1):length(groups)) {
 			contrast <- c("group", groups[i], groups[j])
