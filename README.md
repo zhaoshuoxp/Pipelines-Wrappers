@@ -253,7 +253,7 @@ cond2_rep2_R2.fastq.gz
 And a text file with meta information. i.e.
 
 ```shell
-sample  condition
+Sample  Group
 cond1_rep1  group1
 cond1_rep2  group1
 cond2_rep1  group2
@@ -278,16 +278,16 @@ Then the meta.txt will be created and opened with VIM. Sample column (1st) shoul
 help message can be shown by `RNAseq.sh -h`
 
 ```shell
-Usage: RNAseq.sh <options> -c conditions.txt /PATH/to/directoy/contains/fastq/ 
-    Options:
-      -m [str] /PATH/to/meta.txt
-      -s [str] species <hg|mm> hg=hg38, mm=mm10
-      -i [str] Custom STAR index PATH
-      -g [str] Custom Reference GTF transcripts PATH
-      -t [int] Threads (1 default)
-      -p prepare meta.txt
-      -n Nextera adapters (Truseq default)
-      -h Print this help message
+Usage: RNAseq.sh <options> -m meta.txt </PATH/to/fastq/> 
+  Options:
+    -m [str] /PATH/to/meta.txt
+    -s [str] species <hg|mm> hg=hg38, mm=mm10
+    -i [str] Custom STAR index PATH
+    -g [str] Custom Reference GTF transcripts PATH
+    -t [int] Threads (1 default)
+    -p prepare meta.txt
+    -n Nextera adapters (Truseq default)
+    -h Print this help message
 ```
 
 #### Example
