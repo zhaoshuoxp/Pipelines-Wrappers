@@ -44,7 +44,7 @@ help(){
 
   NOTE:
     1) ### Put fastq files and give the their parent directory (NOT fastq files themselves, script will scan the directory) to the script ###
-    2) Sample names in meta.txt must be shown without _R1/2.fastq.gz suffix, The order of samples has to the same as in command: ls -1 for the script to work,
+    2) Sample names in meta.txt must be shown without _R1/2.fastq.gz or _1/2.fq.gz suffix, The order of samples has to the same as in command "ls -1" for the script to work,
     You may use this script to prepare the meta.txt:
       RNAseq.sh -p </PATH/to/fastq/directory/>
     Then edit meta.txt generated in current directory to add group/condition in the 2nd column,
