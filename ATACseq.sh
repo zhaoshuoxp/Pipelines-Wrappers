@@ -121,6 +121,7 @@ sam_bam_bed(){
 			picard_path=./picard.jar
 		fi
 		# mark duplicates
+		## there is an issue of wirting permission on NFS through python and java, have to save at local drive (i.e.~) and move back after
 		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ~/${1}_mkdup.bam -M ~/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
 		mv ~/${1}_mkdup.bam ./
 		mv ~/${1}_dup.log ./logs/
