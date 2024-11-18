@@ -129,8 +129,8 @@ sam_bam_bed(){
 		# remove chrM alignments
 		samtools index -@ $threads ${1}_mkdup.bam 
 		samtools idxstats ${1}_mkdup.bam | cut -f 1 |grep -v M | xargs samtools view -b -@ $threads -o ${1}_chrM.bam ${1}_mkdup.bam
-		Mreads=$(samtools idxstats ${1}_mkdup.bam|grep ^chrM|awk '{print $2}')
-		fra=$(samtools idxstats ${1}_mkdup.bam|awk '{sum+=$2}END{print "'"$Mreads"'"*100/sum}')
+		Mreads=$(samtools idxstats ${1}_mkdup.bam|grep ^chrM|awk '{print $3}')
+		fra=$(samtools idxstats ${1}_mkdup.bam|awk '{sum+=$3}END{print "'"$Mreads"'"*100/sum}')
 		echo  "chrM reads = "$Mreads","$fra"%"
 		echo  "chrM reads = "$Mreads","$fra"%" >>  ./logs/${1}_align.log
 		# filter our unmapped/failedQC/unpaired/duplicates/secondary alignments
