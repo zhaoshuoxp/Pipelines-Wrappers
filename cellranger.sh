@@ -84,7 +84,7 @@ do
 		# use cellranger8.0.1
 		u) if [ $OPTARG = "8" ]; then
 			cellranger_path='cellranger8'
-		   elif [ $OPTARG = "8" ]; then
+		   elif [ $OPTARG = "9" ]; then
 			cellranger_path='cellranger9'	
 		   fi
 		   ref_type='--transcriptome'
