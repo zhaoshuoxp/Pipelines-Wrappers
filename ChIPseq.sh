@@ -59,7 +59,7 @@ help(){
     -n Nextera adapters (Truseq default)
     -a Use BWA aln algorithm (BWA mem default)
     -u CUR&RUN mode, will be paired-end mode and use bowtie2 aligner with --dovetail
-    -b [str] Custom Bowtie2 index PATH  (valid only with -b option)
+    -b [str] Custom Bowtie2 index PATH  (valid only with -u option)
     -c Using chromap to process FASTQ instead of canonical bowtie2/bwa
     -i [str] Custom chromap genome index (valid only with -c option)
     -r [str] Custom chromap genome reference (valid only with -c option)
