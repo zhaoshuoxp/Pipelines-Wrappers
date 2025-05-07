@@ -37,8 +37,8 @@ Options:
   -c [str]    Custom CSV file for aggr (optional)
   -n          Normalize in aggr mode (default: none)
   -s          Enable secondary analysis (default: off)
-  --gex_path  RNA fastq path (required for multiome)
-  --atac_path ATAC fastq path (required for multiome)
+  --gex_path  RNA fastq path (for multiome mode)
+  --atac_path ATAC fastq path (for multiome mode)
   -h          Show help
 EOF
 	exit 0
@@ -67,6 +67,7 @@ while true; do
 				cellranger_path='cellranger-arc'
 				ref_type='--reference'
 				mod='arc'
+				secondary=''	
 			else
 				echo "Only support: rna, atac, multiome"
 				exit 1
@@ -93,7 +94,7 @@ while true; do
 		-s) secondary=''; shift ;;
 		-h) help ;;
 		--) shift; break ;;
-		*) echo "Internal error!"; exit 1 ;;
+		*) echo "Internal error!"; help; exit 1 ;;
 	esac
 done
 
@@ -135,12 +136,12 @@ generate_aggr_csv() {
 	csv="$out"
 }
 
-# Main execution logic
+# Main execution
 main() {
 	if [[ -z $mod ]]; then echo "Missing -m (data type)"; exit 1; fi
 	if [[ -z $ref_path ]]; then echo "Missing -g or -x (reference)"; exit 1; fi
 
-	# Multiome mode with loose core name matching
+	# MULTIOME MATCHING WITH PREFIX-WRITE
 	if [[ $mod == "arc" && $aggr != "aggr" ]]; then
 		if [[ -z $gex_path || -z $atac_path ]]; then
 			echo "Error: --gex_path and --atac_path required in multiome mode"
@@ -149,45 +150,49 @@ main() {
 
 		echo "🔍 Matching RNA and ATAC fastqs by core sample name..."
 
-		declare -A rna_map
-		declare -A atac_map
+		declare -A rna_prefix_map
+		declare -A atac_prefix_map
 
-		# RNA: extract core like Mult_1 from filename
 		while read -r f; do
 			fname=$(basename "$f")
-			core=$(echo "$fname" | sed -E 's/_RNA.*$//' | sed -E 's/[-_][^_]+_S[0-9]+_L[0-9]+_R[12]_001\.f.*gz//' )
-			rna_map["$core"]=$gex_path
+			core=$(echo "$fname" | sed -E 's/^([^-_]+[-_][0-9]+).*$/\1/')
+			prefix="${fname%%_S*}"
+			rna_prefix_map["$core"]="$prefix"
 		done < <(find "$gex_path" -name "*_R1*.f*q.gz")
 
 		while read -r f; do
 			fname=$(basename "$f")
-			core=$(echo "$fname" | sed -E 's/[-_][^_]+_S[0-9]+_L[0-9]+_R[12]_001\.f.*gz//' )
-			atac_map["$core"]=$atac_path
+			core=$(echo "$fname" | sed -E 's/^([^-_]+[-_][0-9]+).*$/\1/')
+			prefix="${fname%%_S*}"
+			atac_prefix_map["$core"]="$prefix"
 		done < <(find "$atac_path" -name "*_R1*.f*q.gz")
 
-		for sample in "${!rna_map[@]}"; do
-			if [[ -n "${atac_map[$sample]}" ]]; then
-				echo "🧬 Running: $sample"
-				arc_csv="arc_input_${sample}.csv"
+		for core in "${!rna_prefix_map[@]}"; do
+			if [[ -n "${atac_prefix_map[$core]}" ]]; then
+				rna_prefix=${rna_prefix_map[$core]}
+				atac_prefix=${atac_prefix_map[$core]}
+				echo "🧬 Running: $core → RNA=$rna_prefix  ATAC=$atac_prefix"
+
+				arc_csv="arc_input_${core}.csv"
 				echo "fastqs,sample,library_type" > "$arc_csv"
-				echo "${rna_map[$sample]},$sample,Gene Expression" >> "$arc_csv"
-				echo "${atac_map[$sample]},$sample,Chromatin Accessibility" >> "$arc_csv"
+				echo "$gex_path,$rna_prefix,Gene Expression" >> "$arc_csv"
+				echo "$atac_path,$atac_prefix,Chromatin Accessibility" >> "$arc_csv"
 
 				$cellranger_path count \
-					--id "${sample}_arc" \
+					--id "${core}_arc" \
 					--libraries "$arc_csv" \
 					--reference "$ref_path" \
 					--localcores "$threads" \
 					--localmem "$mem" \
 					$secondary
 			else
-				echo "⚠️  No matching ATAC for RNA sample $sample"
+				echo "⚠️  No matching ATAC for RNA sample $core"
 			fi
 		done
 		return
 	fi
 
-	# Aggregation mode
+	# AGGR mode
 	if [[ $aggr == "aggr" ]]; then
 		[[ -z $csv ]] && generate_aggr_csv "$mod"
 		$cellranger_path aggr \
@@ -219,7 +224,6 @@ main() {
 	fi
 }
 
-# Run it
 main "$1"
 
 if [[ $? -eq 0 ]]; then
