@@ -92,8 +92,7 @@ while true; do
 				echo "Only version 7 or 8 supported"
 				exit 1
 			fi
-			ref_type='--transcriptome'
-			
+			ref_type='--transcriptome'	
 			shift 2 ;;
 		-a) aggr='aggr'; shift ;;
 		-c) csv=$2; shift 2 ;;
