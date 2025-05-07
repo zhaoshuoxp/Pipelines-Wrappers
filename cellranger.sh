@@ -44,6 +44,12 @@ EOF
 	exit 0
 }
 
+# If no arguments provided, show help
+if [[ $# -eq 0 ]]; then
+	help
+	exit 1
+fi
+
 # Parse arguments (getopt with long options)
 TEMP=$(getopt -o g:m:x:t:r:uac:nh --long gex_path:,atac_path: -n 'cellranger.sh' -- "$@")
 eval set -- "$TEMP"
@@ -67,7 +73,7 @@ while true; do
 				cellranger_path='cellranger-arc'
 				ref_type='--reference'
 				mod='arc'
-				secondary=''	
+				secondary=''
 			else
 				echo "Only support: rna, atac, multiome"
 				exit 1
@@ -87,6 +93,7 @@ while true; do
 				exit 1
 			fi
 			ref_type='--transcriptome'
+			
 			shift 2 ;;
 		-a) aggr='aggr'; shift ;;
 		-c) csv=$2; shift 2 ;;
@@ -94,7 +101,7 @@ while true; do
 		-s) secondary=''; shift ;;
 		-h) help ;;
 		--) shift; break ;;
-		*) echo "Internal error!"; help; exit 1 ;;
+		*) echo "Internal error!"; exit 1 ;;
 	esac
 done
 
@@ -110,11 +117,13 @@ if [[ -z $ref_path && -n $genome ]]; then
 	fi
 fi
 
-# Generate aggregation CSV
+# Generate aggregation CSV with absolute paths
 generate_aggr_csv() {
 	local mode=$1
 	local out="aggr.csv"
+	local pwd_abs=$(realpath .)
 	echo "Generating $out for $mode..."
+
 	if [[ $mode == "atac" ]]; then
 		echo "library_id,fragments,cells" > "$out"
 		find . -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
@@ -141,7 +150,7 @@ main() {
 	if [[ -z $mod ]]; then echo "Missing -m (data type)"; exit 1; fi
 	if [[ -z $ref_path ]]; then echo "Missing -g or -x (reference)"; exit 1; fi
 
-	# MULTIOME MATCHING WITH PREFIX-WRITE
+	# MULTIOME MODE: MATCH BY CORE, WRITE PREFIX, USE ABS PATH
 	if [[ $mod == "arc" && $aggr != "aggr" ]]; then
 		if [[ -z $gex_path || -z $atac_path ]]; then
 			echo "Error: --gex_path and --atac_path required in multiome mode"
@@ -167,6 +176,9 @@ main() {
 			atac_prefix_map["$core"]="$prefix"
 		done < <(find "$atac_path" -name "*_R1*.f*q.gz")
 
+		abs_gex_path=$(realpath "$gex_path")
+		abs_atac_path=$(realpath "$atac_path")
+
 		for core in "${!rna_prefix_map[@]}"; do
 			if [[ -n "${atac_prefix_map[$core]}" ]]; then
 				rna_prefix=${rna_prefix_map[$core]}
@@ -175,8 +187,8 @@ main() {
 
 				arc_csv="arc_input_${core}.csv"
 				echo "fastqs,sample,library_type" > "$arc_csv"
-				echo "$gex_path,$rna_prefix,Gene Expression" >> "$arc_csv"
-				echo "$atac_path,$atac_prefix,Chromatin Accessibility" >> "$arc_csv"
+				echo "$abs_gex_path,$rna_prefix,Gene Expression" >> "$arc_csv"
+				echo "$abs_atac_path,$atac_prefix,Chromatin Accessibility" >> "$arc_csv"
 
 				$cellranger_path count \
 					--id "${core}_arc" \
