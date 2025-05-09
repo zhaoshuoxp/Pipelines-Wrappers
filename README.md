@@ -1,4 +1,4 @@
-# ATACseq, ChIPseq, CUT&RUN/TAG RNAseq pipeline wrappers
+# Single cell and bulk sequencing pipeline wrappers
 
 -----
 This repository has the following combined shell/awk/python/R scripts which can be used for High-throughput sequecning data analysis.
