@@ -3,10 +3,10 @@
 -----
 This repository has the following combined shell/awk/python/R scripts which can be used for High-throughput sequecning data analysis.
 
-* [cellranger.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cellrangersh): Run CellRanger in batches to process 10x genomic single-cell fastq files.
+* [cellranger.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cellrangersh): Run CellRanger in batches to process 10x Genomics single-cell fastq files.
  * [ATACseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#atacseqsh): bulk ATACseq and CUT&TAG pipeline, from fastq to open chromatin regions/peaks.
  * [ChIPseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chipseqsh): ChIPseq pipeline, from fastq to peak calling step.
- * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differential expressed genes.
+ * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differentially expressed genes.
  * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
  * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
  * [trans_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#trans_assemblesh): *de novo* transcript assembly, from fastq to GTF.
