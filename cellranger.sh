@@ -123,7 +123,7 @@ generate_aggr_csv() {
 
 	if [[ $mode == "atac" ]]; then
 		echo "library_id,fragments,cells" > "$out"
-		find . -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
+		find -L . -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
 			id=$(basename "$dir")
 			frag="$dir/outs/fragments.tsv.gz"
 			cell="$dir/outs/singlecell.csv"
@@ -131,7 +131,7 @@ generate_aggr_csv() {
 		done
 	elif [[ $mode == "arc" ]]; then
 		echo "library_id,atac_fragments,per_barcode_metrics,gex_molecule_info" > "$out"
-		find . -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
+		find -L . -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
 			id=$(basename "$dir")
 			frag="$dir/outs/atac_fragments.tsv.gz"
 			per="$dir/outs/per_barcode_metrics.csv"
