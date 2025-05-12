@@ -14,7 +14,7 @@ mem=200
 threads=20
 norm='none'
 aggr='none'
-secondary='--nosecondary'
+secondary_flag=1  # 1 = default to --nosecondary unless -s specified
 
 # Default reference paths
 mm10_path='/home/quanyiz/genome/refdata-cellranger-arc-mm10-2020-A-2.0.0/'
@@ -36,7 +36,7 @@ Options:
   -a          Run aggregation (aggr) mode
   -c [str]    Custom CSV file for aggr (optional)
   -n          Normalize in aggr mode (default: none)
-  -s          Enable secondary analysis (default: off)
+  -s          Enable secondary analysis (default: off for aggr and multiome)
   --gex_path  RNA fastq path (for multiome mode)
   --atac_path ATAC fastq path (for multiome mode)
   -h          Show help
@@ -51,7 +51,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 # Parse arguments (getopt with long options)
-TEMP=$(getopt -o g:m:x:t:r:uac:nh --long gex_path:,atac_path: -n 'cellranger.sh' -- "$@")
+TEMP=$(getopt -o g:m:x:t:r:uac:nhs --long gex_path:,atac_path: -n 'cellranger.sh' -- "$@")
 eval set -- "$TEMP"
 
 while true; do
@@ -73,7 +73,6 @@ while true; do
 				cellranger_path='cellranger-arc'
 				ref_type='--reference'
 				mod='arc'
-				secondary=''
 			else
 				echo "Only support: rna, atac, multiome"
 				exit 1
@@ -97,7 +96,7 @@ while true; do
 		-a) aggr='aggr'; shift ;;
 		-c) csv=$2; shift 2 ;;
 		-n) norm='depth'; shift ;;
-		-s) secondary=''; shift ;;
+		-s) secondary_flag=0; shift ;;  # Explicitly enable secondary analysis
 		-h) help ;;
 		--) shift; break ;;
 		*) echo "Internal error!"; exit 1 ;;
@@ -120,7 +119,6 @@ fi
 generate_aggr_csv() {
 	local mode=$1
 	local out="aggr.csv"
-	local pwd_abs=$(realpath .)
 	echo "Generating $out for $mode..."
 
 	if [[ $mode == "atac" ]]; then
@@ -149,7 +147,13 @@ main() {
 	if [[ -z $mod ]]; then echo "Missing -m (data type)"; exit 1; fi
 	if [[ -z $ref_path ]]; then echo "Missing -g or -x (reference)"; exit 1; fi
 
-	# MULTIOME MODE: MATCH BY CORE, WRITE PREFIX, USE ABS PATH
+	# Determine final value of --nosecondary
+	secondary=""
+	if [[ $secondary_flag -eq 1 && ( $mod == "arc" || $aggr == "aggr" ) ]]; then
+		secondary="--nosecondary"
+	fi
+
+	# MULTIOME MODE
 	if [[ $mod == "arc" && $aggr != "aggr" ]]; then
 		if [[ -z $gex_path || -z $atac_path ]]; then
 			echo "Error: --gex_path and --atac_path required in multiome mode"
