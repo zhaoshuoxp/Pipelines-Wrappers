@@ -14,7 +14,6 @@ mem=200
 threads=20
 norm='none'
 aggr='none'
-secondary_flag=1  # 1 = default to --nosecondary unless -s specified
 
 # Default reference paths
 mm10_path='/home/quanyiz/genome/refdata-cellranger-arc-mm10-2020-A-2.0.0/'
@@ -96,7 +95,7 @@ while true; do
 		-a) aggr='aggr'; shift ;;
 		-c) csv=$2; shift 2 ;;
 		-n) norm='depth'; shift ;;
-		-s) secondary_flag=0; shift ;;  # Explicitly enable secondary analysis
+		-s) secondary=""; shift ;;  # Explicitly enable secondary analysis
 		-h) help ;;
 		--) shift; break ;;
 		*) echo "Internal error!"; exit 1 ;;
@@ -148,18 +147,16 @@ main() {
 	if [[ -z $ref_path ]]; then echo "Missing -g or -x (reference)"; exit 1; fi
 
 	# Determine final value of --nosecondary
-	secondary=""
-	if [[ $secondary_flag -eq 1 && ( $mod == "arc" || $aggr == "aggr" ) ]]; then
-		secondary="--nosecondary"
-	fi
-
+	secondary="--nosecondary"
+	
 	# MULTIOME MODE
 	if [[ $mod == "arc" && $aggr != "aggr" ]]; then
 		if [[ -z $gex_path || -z $atac_path ]]; then
 			echo "Error: --gex_path and --atac_path required in multiome mode"
 			exit 1
 		fi
-
+		secondary=""
+		
 		echo "🔍 Matching RNA and ATAC fastqs by core sample name..."
 
 		declare -A rna_prefix_map
