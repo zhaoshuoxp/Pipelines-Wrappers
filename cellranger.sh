@@ -95,7 +95,7 @@ while true; do
 		-a) aggr='aggr'; shift ;;
 		-c) csv=$2; shift 2 ;;
 		-n) norm='depth'; shift ;;
-		-s) secondary=""; shift ;;  # Explicitly enable secondary analysis
+		-s) secondary_flag=1; shift ;;  # Explicitly enable secondary analysis
 		-h) help ;;
 		--) shift; break ;;
 		*) echo "Internal error!"; exit 1 ;;
@@ -147,7 +147,11 @@ main() {
 	if [[ -z $ref_path ]]; then echo "Missing -g or -x (reference)"; exit 1; fi
 
 	# Determine final value of --nosecondary
-	secondary="--nosecondary"
+	if [[ $secondary_flag -eq 1 ]]; then
+		secondary=""
+	else
+		secondary="--nosecondary"
+	fi
 	
 	# MULTIOME MODE
 	if [[ $mod == "arc" && $aggr != "aggr" ]]; then
