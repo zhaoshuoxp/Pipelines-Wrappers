@@ -50,55 +50,93 @@ if [[ $# -eq 0 ]]; then
 fi
 
 # Parse arguments (getopt with long options)
-TEMP=$(getopt -o g:m:x:t:r:uac:nhs --long gex_path:,atac_path: -n 'cellranger.sh' -- "$@")
+TEMP=$(getopt -o g:m:x:t:r:u:ac:nhs --long gex_path:,atac_path: -n 'cellranger.sh' -- "$@")
+if [ $? != 0 ]; then
+	echo "Terminating..." >&2
+	exit 1
+fi
+
 eval set -- "$TEMP"
 
 while true; do
 	case "$1" in
-		--gex_path) gex_path=$2; shift 2 ;;
-		--atac_path) atac_path=$2; shift 2 ;;
-		-g) genome=$2; shift 2 ;;
+		--gex_path)
+			gex_path=$2
+			shift 2 ;;
+		--atac_path)
+			atac_path=$2
+			shift 2 ;;
+		-g)
+			genome=$2
+			shift 2 ;;
 		-m)
-			if [[ $2 == "rna" ]]; then
-				cellranger_path='cellranger9'
-				ref_type='--transcriptome'
-				added_par='--create-bam true'
-				mod='rna'
-			elif [[ $2 == "atac" ]]; then
-				cellranger_path='cellranger-atac'
-				ref_type='--reference'
-				mod='atac'
-			elif [[ $2 == "multiome" ]]; then
-				cellranger_path='cellranger-arc'
-				ref_type='--reference'
-				mod='arc'
-			else
-				echo "Only support: rna, atac, multiome"
-				exit 1
-			fi
+			case "$2" in
+				rna)
+					cellranger_path='cellranger9'
+					ref_type='--transcriptome'
+					added_par='--create-bam true'
+					mod='rna' ;;
+				atac)
+					cellranger_path='cellranger-atac'
+					ref_type='--reference'
+					mod='atac' ;;
+				multiome)
+					cellranger_path='cellranger-arc'
+					ref_type='--reference'
+					mod='arc' ;;
+				*)
+					echo "Error: -m only supports rna, atac, multiome" >&2
+					exit 1 ;;
+			esac
 			shift 2 ;;
-		-x) ref_path=$2; shift 2 ;;
-		-t) threads=$2; shift 2 ;;
-		-r) mem=$2; shift 2 ;;
+		-x)
+			ref_path=$2
+			shift 2 ;;
+		-t)
+			threads=$2
+			shift 2 ;;
+		-r)
+			mem=$2
+			shift 2 ;;
 		-u)
-			if [[ $2 == "8" ]]; then
-				cellranger_path='cellranger8'
-			elif [[ $2 == "7" ]]; then
-				cellranger_path='cellranger'
-				added_par=""
-			else
-				echo "Only version 7 or 8 supported"
+			if [[ -z "$2" || "$2" =~ ^- ]]; then
+				echo "Error: -u requires an argument (7 or 8)" >&2
 				exit 1
 			fi
-			ref_type='--transcriptome'	
+			echo "DEBUG: got -u with value '$2'"
+			case "$2" in
+				8)
+					cellranger_path='cellranger8' ;;
+				7)
+					cellranger_path='cellranger'
+					added_par="" ;;
+				*)
+					echo "Error: -u only supports version 7 or 8" >&2
+					exit 1 ;;
+			esac
+			ref_type='--transcriptome'
 			shift 2 ;;
-		-a) aggr='aggr'; shift ;;
-		-c) csv=$2; shift 2 ;;
-		-n) norm='depth'; shift ;;
-		-s) secondary_flag=1; shift ;;  # Explicitly enable secondary analysis
-		-h) help ;;
-		--) shift; break ;;
-		*) echo "Internal error!"; exit 1 ;;
+		-a)
+			aggr='aggr'
+			shift ;;
+		-c)
+			csv=$2
+			shift 2 ;;
+		-n)
+			norm='depth'
+			shift ;;
+		-s)
+			secondary_flag=1
+			shift ;;  # Explicitly enable secondary analysis
+		-h)
+			help
+			exit 0 ;;
+		--)
+			shift
+			break ;;
+		*)
+			echo "Internal error!" >&2
+			exit 1 ;;
 	esac
 done
 
