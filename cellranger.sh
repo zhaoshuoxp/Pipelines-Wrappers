@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check dependencies
-requires=("cellranger-atac" "cellranger-arc" "cellranger" "cellranger8" "cellranger9")
+requires=("cellranger-atac" "cellranger-arc" "cellranger" "cellranger8" "cellranger9" "bgzip" "tabix")
 for i in "${requires[@]}"; do
     if ! command -v "$i" &>/dev/null; then
         echo "Error: $i not found in PATH" >&2
@@ -179,6 +179,27 @@ generate_aggr_csv() {
 	csv="$out"
 }
 
+
+process_fragments() {
+	local outdir=$1
+	local mode=$2
+	cd "$outdir/outs" || { echo "⚠️  Skipping: outs directory not found in $outdir"; return; }
+	if [[ $mode == "arc" ]]; then
+		src="atac_fragments.tsv.gz"
+	else
+		src="fragments.tsv.gz"
+	fi
+	if [[ ! -f $src ]]; then
+		echo "⚠️  Warning: $src not found in $outdir/outs"
+		return
+	fi
+	echo "🔧 Processing $src ..."
+	gunzip -c "$src" | cut -f1-5 | bgzip > fragments_5col.tsv.gz
+	tabix -p bed fragments_5col.tsv.gz
+}
+
+
+
 # Main execution
 main() {
 	if [[ -z $mod ]]; then echo "Missing -m (data type)"; exit 1; fi
@@ -239,6 +260,9 @@ main() {
 					--localcores "$threads" \
 					--localmem "$mem" \
 					$secondary
+				
+				process_fragments "${core}_arc" "arc"
+				
 			else
 				echo "⚠️  No matching ATAC for RNA sample $core"
 			fi
@@ -249,14 +273,18 @@ main() {
 	# AGGR mode
 	if [[ $aggr == "aggr" ]]; then
 		[[ -z $csv ]] && generate_aggr_csv "$mod"
+		runid="aggr_$(date +%Y%m%d)"
 		$cellranger_path aggr \
-			--id aggr_$(date +%Y%m%d) \
+			--id "$runid" \
 			--csv "$csv" \
 			$ref_type "$ref_path" \
 			--normalize "$norm" \
 			--localcores "$threads" \
 			--localmem "$mem" \
 			$secondary
+			
+		process_fragments "$runid" "$mod"
+		
 	else
 		if [[ $mod == "rna" && $genome == "mm10" ]]; then
 			ref_path=$rna_mm10_path
@@ -274,6 +302,11 @@ main() {
 				--localcores "$threads" \
 				--localmem "$mem" \
 				$added_par $secondary
+				
+			if [[ $mod == "atac" ]]; then
+				process_fragments "$prefix" "$mod"
+			fi
+			
 		done
 	fi
 }
