@@ -161,7 +161,7 @@ peak_calling(){
 		mv ${2}_shift_se.bed  ${2}_se.bed
 		# broad peak calling
 		cd macs2
-		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --broad --nomodel --shift -37 --extsize 73
+		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --broad --nomodel --shift -100 --extsize 200
 		# Blacklist filter 
 		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
 		cd ..
@@ -172,7 +172,8 @@ peak_calling(){
 		# broad peak calling
 		cd macs2
 		echo "MACS2 version >= 2.1.1 required!"
-		macs2 callpeak -t ../${2}_pe.bed -g $sp -n ${2} -f BEDPE --keep-dup all --broad
+		macs2 callpeak -t ../${2}_se.bed -f BED -g $sp -n ${2} --keep-dup all --nomodel --shift -100 --extsize 200 -q 0.05
+		#macs2 callpeak -t ../${2}_pe.bed -g $sp -n ${2} -f BEDPE --keep-dup all --broad
 		# Blacklist filter 
 		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
 		cd ..
