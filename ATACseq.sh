@@ -42,7 +42,7 @@ help(){
   Usage: ATAC.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Paired-end fastq files ###
-  This script will QC fastq files and align reads to reference genome build with Bowtie2 or chromap, depending on the species passed by -g or the index and other required files passed by -i, -b and -c, convert alignments to filtered BAM/BED and bigwig, then call peaks with MACS2 in BEDPE mode after Tn5 shifting.
+  This script will QC fastq files and align reads to reference genome build with Bowtie2 or chromap, depending on the species passed by -g or the index and other required files passed by -i, -b and -c, convert alignments to filtered BAM/BED and bigwig, then call peaks with MACS2 in BED mode after Tn5 shifting.
   This script works for both ATACseq and CUT&TAG. All results will be store in current (./) directory.
   ### python3/cutadapt/fastqc/bowtie2/samtools/bedtools/deeptools/macs2>=2.1.1 required ###
 
@@ -161,9 +161,9 @@ peak_calling(){
 		mv ${2}_shift_se.bed  ${2}_se.bed
 		# broad peak calling
 		cd macs2
-		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --broad --nomodel --shift -100 --extsize 200
+		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --nomodel --shift -100 --extsize 200 -q 0.05
 		# Blacklist filter 
-		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
+		intersectBed -v -a ${2}_peaks.narrowPeak -b $blkt_file > ${2}_filtered.bed
 		cd ..
 	else
 		# Tn5 shift in PE mode
@@ -175,7 +175,7 @@ peak_calling(){
 		macs2 callpeak -t ../${2}_se.bed -f BED -g $sp -n ${2} --keep-dup all --nomodel --shift -100 --extsize 200 -q 0.05
 		#macs2 callpeak -t ../${2}_pe.bed -g $sp -n ${2} -f BEDPE --keep-dup all --broad
 		# Blacklist filter 
-		intersectBed -v -a ${2}_peaks.broadPeak -b $blkt_file > ${2}_broad_filtered.bed
+		intersectBed -v -a ${2}_peaks.narrowPeak -b $blkt_file > ${2}_filtered.bed
 		cd ..
 		rm ${2}.bedpe ${2}.bed 
 	fi
@@ -205,13 +205,13 @@ chromap_total(){
 	echo "MACS2 version >= 2.1.1 required!"
 	if [ $2 = 'se' ];then
 		mv ../${1}_pri.bed ../${1}_se.bed
-		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --broad --nomodel --shift -37 --extsize 73
+		macs2 callpeak -t ../${1}_se.bed -g $sp -n ${1} -f BED --keep-dup all --nomodel --shift -100 --extsize 200 -q 0.05
 	else
 		mv ../${1}_pri.bed ../${1}_pe.bed 
-		macs2 callpeak -t ../${1}_pe.bed -g $sp -n ${1} -f BEDPE --keep-dup all --broad
+		macs2 callpeak -t ../${1}_se.bed -g $sp -n ${1} -f BED --keep-dup all --nomodel --shift -100 --extsize 200 -q 0.05
 	fi
 	# Blacklist filter 
-	intersectBed -v -a ${1}_peaks.broadPeak -b $blkt_file > ${1}_broad_filtered.bed
+	intersectBed -v -a ${1}_peaks.narrowPeak $blkt_file > ${1}_filtered.bed
 }
 
 # no ARGs error
