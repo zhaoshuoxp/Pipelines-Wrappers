@@ -85,9 +85,7 @@ All results will be store in current (./) directory.
 
 ## ATACseq.sh
 
-This script checks quality controls of fastq files, then aligns reads to the specified reference genome using Bowtie2 or chromap, depending on the selected species passed by -g or the provided index and other necessary files specified by -i, -b, and -c. It converts the alignments to filtered BAM/BED and bigwig formats, and subsequently identifies peaks using MACS2 in BED mode following Tn5 shifting.
-
-> This script works for both ATACseq and CUT&TAG.
+This script checks quality controls of fastq files, then aligns reads to the specified reference genome using Bowtie2 or chromap, depending on the selected species passed by -g or the provided index and other necessary files specified by -i, -b, and -c. It converts the alignments to filtered BAM/BED and bigwig formats, and subsequently identifies peaks using MACS2 in BED mode following Tn5 shifting for single-end sequencing or MACS3 hmmratac for paired-end sequencing.
 
 #### Input
 Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fastq.gz 
