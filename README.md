@@ -85,7 +85,7 @@ All results will be store in current (./) directory.
 
 ## ATACseq.sh
 
-This script checks quality controls of fastq files, then aligns reads to the specified reference genome using Bowtie2 or chromap, depending on the selected species passed by -g or the provided index and other necessary files specified by -i, -b, and -c. It converts the alignments to filtered BAM/BED and bigwig formats, and subsequently identifies peaks using MACS2 in BEDPE mode following Tn5 shifting.
+This script checks quality controls of fastq files, then aligns reads to the specified reference genome using Bowtie2 or chromap, depending on the selected species passed by -g or the provided index and other necessary files specified by -i, -b, and -c. It converts the alignments to filtered BAM/BED and bigwig formats, and subsequently identifies peaks using MACS2 in BED mode following Tn5 shifting.
 
 > This script works for both ATACseq and CUT&TAG.
 
@@ -137,10 +137,10 @@ All results will be store in current (./) directory.
 * {prefix}_trimmed_R1/2.fastq.gz: adapter trimmed fastq files.
 * {prefix}_mkdup.bam: all alignments, with duplicates marked.
 * {prefix}_filtered.bam: useful filtered alignments; duplicates, unpaired, unmapped, low-quality, secondary, chrM reads removed.
-* {prefix}_se.bed: useful filtered alignments in BED format, Tn5 shifted.
-* {prefix}_pe.bed: useful filtered alignments in BEDPE format,  Tn5 shifted, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome. It will be used for macs2 peak calling.
+* {prefix}_se.bed: useful filtered alignments in BED format, Tn5 shifted. It will be used for macs2 peak calling.
+* {prefix}_pe.bed: useful filtered alignments in BEDPE format,  Tn5 shifted, the 2nd and 3rd columns indicate the fragment start and end coordinates on genome. 
 * {prefix}.bw: bigwig file converted from {prefix}_filtered.bam, can be upload to genome browser for visualization.
-* macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only broad peaks will be called by default. In addition, {prefix}_broad_filtered.bed is the peaks file with blacklist filtered.
+* macs2: output of macs2, see [here](https://github.com/taoliu/MACS#output-files). Only narrow peaks will be called by default. In addition, {prefix}_filtered.bed is the peaks file with blacklist filtered.
 * fastqc: the report(s) of fastqc
 * logs: running logs
 
