@@ -13,9 +13,19 @@ mod='pe'
 aln='bwa'
 # default BWA mem algorithm
 alg='mem'
-# default TruSeq adapters
-aA='AGATCGGAAGAGC'
-gG='GCTCTTCCGATCT'
+
+# --- Adapter Sequences ---
+# TruSeq Universal Adapter (Default for ChIP/CUT&RUN)
+aA_truseq='AGATCGGAAGAGC'
+gG_truseq='GCTCTTCCGATCT'
+# Nextera Transposase Sequence (Default for CUT&Tag)
+aA_nextera='CTGTCTCTTATACACATCT'
+gG_nextera='AGATGTGTATAAGAGACAG'
+
+# Set default adapters to TruSeq
+aA=$aA_truseq
+gG=$gG_truseq
+
 # default 1 core to run
 threads=1
 # BWA index
@@ -41,29 +51,30 @@ picard_path='/nfs/baldar/quanyiz/app/picard.jar'
 # help message
 help(){
 	cat <<-EOF
-  Usage: ChIPseq.sh <options> <reads1>|<reads2> 
+  Usage: ChIPseq.sh <options> <reads1>|<reads2> 
 
-  ### INPUT: Single-end or Paired-end fastq files ###
-  This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN), depending on the species passed by -g or the index passed by -i, 
-  convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
-  All results will be store in current (./) directory.
-  ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
+  ### INPUT: Single-end or Paired-end fastq files ###
+  This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN/Tag), depending on the species passed by -g or the index passed by -i, 
+  convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
+  All results will be store in current (./) directory.
+  ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
 
-  Options:
-    -g [str] Genome build selection <hg38|hg19|mm10>
-    -x [str] Custom BWA index PATH (valid only without -g option)
-    -z [str] Custom chromosome size table (valid only without -g option)
-    -p [str] Prefix of output
-    -t [int] Threads (1 default)
-    -s Single-end mod (Paired-end default)
-    -n Nextera adapters (Truseq default)
-    -a Use BWA aln algorithm (BWA mem default)
-    -u CUR&RUN mode, will be paired-end mode and use bowtie2 aligner with --dovetail
-    -b [str] Custom Bowtie2 index PATH  (valid only with -u option)
-    -c Using chromap to process FASTQ instead of canonical bowtie2/bwa
-    -i [str] Custom chromap genome index (valid only with -c option)
-    -r [str] Custom chromap genome reference (valid only with -c option)
-    -h Print this help message
+  Options:
+    -g [str] Genome build selection <hg38|hg19|mm10>
+    -x [str] Custom BWA index PATH (valid only without -g option)
+    -z [str] Custom chromosome size table (valid only without -g option)
+    -p [str] Prefix of output
+    -t [int] Threads (1 default)
+    -s Single-end mod (Paired-end default)
+    -n Manually force Nextera adapters (overrides defaults)
+    -a Use BWA aln algorithm (BWA mem default)
+    -R CUT&RUN mode: Paired-end, Bowtie2, TruSeq adapters 
+    -T CUT&Tag mode: Paired-end, Bowtie2, Nextera adapters 
+    -b [str] Custom Bowtie2 index PATH  (valid only with -u/-T option)
+    -c Using chromap to process FASTQ instead of canonical bowtie2/bwa
+    -i [str] Custom chromap genome index (valid only with -c option)
+    -r [str] Custom chromap genome reference (valid only with -c option)
+    -h Print this help message
 
 EOF
 	exit 0
@@ -74,14 +85,14 @@ EOF
 QC_mapping(){
 	if [ $1 = 'se' ];then
 		# single-end CMD
-		# FastQC 
-		#fastqc -f fastq -t $threads -o fastqc $4 
-		# TruSeq adapter trimming
+		# FastQC 
+		#fastqc -f fastq -t $threads -o fastqc $4 
+		# Adapter trimming (use $aA which is dynamically set)
 		cutadapt -m 30 -j $threads -a $aA -o ${3}_trimmed.fastq.gz $4 > ./logs/${3}_cutadapt.log
-		# BWA aln 
+		# BWA aln 
 		if [ $2 = 'aln' ];then
 			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed.fastq.gz > ${3}.sai
-			bwa samse $bwaindex ${3}.sai ${3}_trimmed.fastq.gz  > ${3}.sam
+			bwa samse $bwaindex ${3}.sai ${3}_trimmed.fastq.gz  > ${3}.sam
 			rm ${3}.sai
 		# BWA mem
 		else
@@ -91,17 +102,18 @@ QC_mapping(){
 		# paired-end CMD
 		# FastQC
 		#fastqc -f fastq -t $threads -o fastqc $4 $5
-		# TruSeq adapter trimming
+		# Adapter trimming (use $aA and $gG which are dynamically set)
 		cutadapt -m 30 -j $threads -a $aA -A $aA -o ${3}_trimmed_R1.fastq.gz -p ${3}_trimmed_R2.fastq.gz $4 $5 > ./logs/${3}_cutadapt.log
-		# BWA aln 
+		# BWA aln 
 		if [ $2 = 'aln' ];then
 			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed_R1.fastq.gz > ${3}_R1.sai
 			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed_R2.fastq.gz > ${3}_R2.sai
-			bwa sampe $bwaindex ${3}_R1.sai ${3}_R2.sai ${3}_trimmed_R1.fastq.gz ${3}_trimmed_R2.fastq.gz  > ${3}.sam
+			bwa sampe $bwaindex ${3}_R1.sai ${3}_R2.sai ${3}_trimmed_R1.fastq.gz ${3}_trimmed_R2.fastq.gz  > ${3}.sam
 			rm ${3}_R1.sai ${3}_R2.sai
-		# CUT&RUN mode
+		# CUT&RUN / CUT&Tag mode (Both use Bowtie2)
 		elif [ $2 = 'bowtie2' ]; then
-			bowtie2 --dovetail --threads $threads -X 1000 -x $bw2index -1 ${3}_trimmed_R1.fastq.gz -2 ${3}_trimmed_R2.fastq.gz -S ${3}.sam
+			# Added --no-mixed --no-discordant for cleaner C&R/C&T results
+			bowtie2 --dovetail --no-mixed --no-discordant --threads $threads -X 1000 -x $bw2index -1 ${3}_trimmed_R1.fastq.gz -2 ${3}_trimmed_R2.fastq.gz -S ${3}.sam
 		# ChIPseq mode
 		else
 			bwa mem -M -t $threads $bwaindex ${3}_trimmed_R1.fastq.gz ${3}_trimmed_R2.fastq.gz > ${3}.sam
@@ -112,7 +124,7 @@ QC_mapping(){
 # SAM2BAM and filtering to BED
 sam_bam_bed(){
 	# sam2bam+sort
-	samtools view -b -@ $threads -o ${1}.bam ${1}.sam 
+	samtools view -b -@ $threads -o ${1}.bam ${1}.sam 
 	samtools sort -@ $threads -o ${1}_srt.bam ${1}.bam
 	# single-end CMD
 	if [ $2 = 'se' ];then
@@ -151,7 +163,7 @@ sam_bam_bed(){
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
-		# sort bam by query name for bedpe 
+		# sort bam by query name for bedpe 
 		samtools sort -n -@ $threads -o ${1}.bam2 ${1}_filtered.bam
 		# bam2bedpe
 		bamToBed -bedpe -i ${1}.bam2 > ${1}.bedpe
@@ -177,7 +189,7 @@ chromap_total(){
 		tail -n 14 nohup.out >> ./logs/${1}_align.log
 		awk 'substr($1,1,3)=="chr"' ${1}_pe.bed > ${1}_pri.bed
 		len=$(gunzip -c $3 |head -n2|tail -n1|awk '{print length($0)}')
-		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$4,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
+		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$4,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
 	fi
 	factor=$(wc -l ${1}_pri.bed|awk '{print 1000000/$1}')
 	genomeCoverageBed -scale $factor -i ${1}_pri.bed -g $chromsize -bg > ${1}.bdg
@@ -192,7 +204,7 @@ if [ $# -lt 1 ];then
 	exit 1
 fi
 
-while getopts "g:x:t:sacnp:z:r:i:hub:" arg
+while getopts "g:x:t:sacnp:z:r:i:hRTb:" arg
 do
 	case $arg in
 		g) if [ $OPTARG = "hg19" ]; then
@@ -201,22 +213,22 @@ do
 			chromapindex=$chromapindex_hg19
 			chromapref=$chromapref_hg19
 			chromsize=$chromszize_hg19
-		   elif [ $OPTARG = "hg38" ]; then
+		   elif [ $OPTARG = "hg38" ]; then
 			bwaindex=$bwaindex_hg38
 			bw2index=$bw2index_hg38
 			chromapindex=$chromapindex_hg38
 			chromapref=$chromapref_hg38
 			chromsize=$chromszize_hg38
-		   elif [ $OPTARG = "mm10" ]; then
+		   elif [ $OPTARG = "mm10" ]; then
 			bwaindex=$bwaindex_mm10
 			bw2index=$bw2index_mm10
 			chromapindex=$chromapindex_mm10
 			chromapref=$chromapref_mm10
 			chromsize=$chromszize_mm10
-		   else
+		   else
 			echo "Only support hg38, hg19 or mm10, or pass your custom genome index"
 			exit 1
-		   fi;;
+		   fi;;
 		# BWA index PATH
 		x) bwaindex=$OPTARG;;
 		t) threads=$OPTARG;;
@@ -225,15 +237,23 @@ do
 		# BWA algorithm
 		a) alg='aln';;
 		c) aln='chromap';;
-		# Nextera adapters
-		n) aA='CTGTCTCTTATACACATCT'
-			gG='AGATGTGTATAAGAGACAG';;
+		# Manual Nextera override
+		n) aA=$aA_nextera
+		   gG=$gG_nextera;;
 		p) prefix=$OPTARG;;
 		z) chromsize=$OPTARG;;
 		r) chromapref=$OPTARG;;
 		i) chromapindex=$OPTARG;;
-		u) alg='bowtie2'
-			mod='pe';;
+		# CUT&RUN Mode
+		R) alg='bowtie2'
+		   mod='pe'
+		   aA=$aA_truseq
+		   gG=$gG_truseq;;
+		# CUT&Tag Mode
+		T) alg='bowtie2'
+		   mod='pe'
+		   aA=$aA_nextera
+		   gG=$gG_nextera;;
 		b) bw2index=$OPTARG;;
 		h) help ;;
 		?) help
@@ -255,13 +275,13 @@ fi
 
 # main
 main(){
-	if [ ! -d logs ];then 
+	if [ ! -d logs ];then 
 		mkdir logs
 	fi
 
-	#if [ ! -d fastqc ];then 
+	#if [ ! -d fastqc ];then 
 	#	mkdir fastqc
-	#fi 
+	#fi 
 	
 	if [ $aln = 'chromap' ];then
 		chromap_total $prefix $mod $1 $2
@@ -283,7 +303,6 @@ else
 fi
 
 ################ END ################
-#          Created by Aone          #
-#     quanyi.zhao@stanford.edu      #
+#          Created by Aone          #
+#     quanyi.zhao@stanford.edu      #
 ################ END ################
-
