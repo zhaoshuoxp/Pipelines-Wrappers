@@ -161,7 +161,8 @@ peak_calling(){
 		mv ${2}_shift_se.bed  ${2}_se.bed
 		# broad peak calling
 		cd macs2
-		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --nomodel --shift -100 --extsize 200 -q 0.05
+		echo "MACS2 version >= 2.1.1 required!"
+		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --nomodel --shift -75 --extsize 150 -q 0.05
 		# Blacklist filter 
 		intersectBed -v -a ${2}_peaks.narrowPeak -b $blkt_file > ${2}_filtered.bed
 		cd ..
@@ -172,8 +173,7 @@ peak_calling(){
 		# broad peak calling
 		cd macs2
 		echo "MACS2 version >= 2.1.1 required!"
-		macs2 callpeak -t ../${2}_se.bed -f BED -g $sp -n ${2} --keep-dup all --nomodel --shift -100 --extsize 200 -q 0.05
-		#macs2 callpeak -t ../${2}_pe.bed -g $sp -n ${2} -f BEDPE --keep-dup all --broad
+		macs2 callpeak -t ../${2}_se.bed -g $sp -n ${2} -f BED --keep-dup all --nomodel --shift -75 --extsize 150 -q 0.05
 		# Blacklist filter 
 		intersectBed -v -a ${2}_peaks.narrowPeak -b $blkt_file > ${2}_filtered.bed
 		cd ..
@@ -202,13 +202,15 @@ chromap_total(){
 	rm ${1}.bdg1
 
 	cd macs2
-	echo "MACS2 version >= 2.1.1 required!"
 	if [ $2 = 'se' ];then
 		mv ../${1}_pri.bed ../${1}_se.bed
-		macs2 callpeak -t ../${1}_se.bed -g $sp -n ${1} -f BED --keep-dup all --nomodel --shift -100 --extsize 200 -q 0.05
+		echo "MACS2 version >= 2.1.1 required!"
+		macs2 callpeak -t ../${1}_se.bed -g $sp -n ${1} -f BED --keep-dup all --nomodel --shift -75 --extsize 150 -q 0.05
+		
 	else
 		mv ../${1}_pri.bed ../${1}_pe.bed 
-		macs2 callpeak -t ../${1}_se.bed -g $sp -n ${1} -f BED --keep-dup all --nomodel --shift -100 --extsize 200 -q 0.05
+		echo "MACS2 version >= 2.1.1 required!"
+		macs2 callpeak -t ../${1}_se.bed -g $sp -n ${1} -f BED --keep-dup all --nomodel --shift -75 --extsize 150 -q 0.05
 	fi
 	# Blacklist filter 
 	intersectBed -v -a ${1}_peaks.narrowPeak $blkt_file > ${1}_filtered.bed
