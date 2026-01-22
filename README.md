@@ -481,13 +481,11 @@ All results will be store in current (./) directory.
 
 
 
-
-
 ------
 
 ## CRISPRlib.sh
 
-This script uses cutadapt trimming the input fastq files to get the sgRNA sequences (20nt) according to the adaptor sequence on the 5' end next to the sgRNA, and then aligns these sequences to bowtie index build with the reference sgRNA library.  The Addgene library 110066, 160129 and 162256 have been prebuilt and can be directly assigned by  -l.
+This script uses cutadapt trimming the input fastq files to get the sgRNA sequences (20nt) according to the adaptor sequence on the 5' end next to the sgRNA, and then aligns these sequences to bowtie index build with the reference sgRNA library. 
 
 #### Input
 
@@ -499,12 +497,6 @@ help message can be shown by `CRISPRlib.sh -h`
 
 ```shell
     Usage: CRISPRlib.sh <options> <reads_clean.fq.gz>
-
-    ### INPUT: fastq files ###
-    This script will trim the input fastq to 20nt after the given sequence with cutadapt, and align the trimmed reads to the reference library build with Bowtie1, depending on the library selection passed by -l or the index and adapter sequence passed by -i and -a,
-    then statisticize each sequence's frequency, and all results will be store in current (./) directory.
-    ### python3/cutadapt/bowtie1/samtools required ###
-
     Options:
     -l [str] library selection <110066|160129|162256>
     -i [str] Custom bowtie index PATH
@@ -515,12 +507,6 @@ help message can be shown by `CRISPRlib.sh -h`
 ```
 
 #### Example
-
-```shell
-CRISPRlib.sh -n 12 -l 110066 -p test lib_R2.fastq.gz
-```
-
-Alternatively, you may build your custom sgRNA library index and give the path to the script along with your adaptor sequence:
 
 1. First make sure your sgRNA library is in [FASTA](https://www.ncbi.nlm.nih.gov/genbank/fastaformat/) format, such as:
 
