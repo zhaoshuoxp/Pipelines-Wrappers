@@ -44,11 +44,11 @@ Options:
   -x [str]    Custom reference path (overrides -g)
   -t [int]    Threads (default: 20)
   -r [int]    Memory in GB (default: 200)
-  -u [int]    Use CellRanger version <8|7> (for -m rna only)
+  -u [int]    Use CellRanger version <7|8|9> (for -m rna only; default is 10)
   -a          Run aggregation (aggr) mode
   -c [str]    Custom CSV file for aggr (optional)
   -n          Normalize in aggr mode (default: none)
-  -s          Enable secondary analysis (default: off)
+  -s          Enable secondary analysis (default: off for aggr and multiome)
   --gex_path  RNA fastq path (for multiome mode)
   --atac_path ATAC fastq path (for multiome mode)
   -h          Show help
