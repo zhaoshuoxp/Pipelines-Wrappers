@@ -16,7 +16,6 @@ help(){
     ### python3/cutadapt/bowtie1/samtools required ###
 
     Options:
-    -l [str] library selection <110066|160129|162256>
     -i [str] Custom bowtie index PATH
     -a [str] Custom adapter sequence
     -p [str] Prefix of output
@@ -47,22 +46,9 @@ if [ $# -lt 1 ];then
 fi
 
 
-while getopts "l:i:a:n:p:h" arg
+while getopts "i:a:n:p:h" arg
 do
     case $arg in
-        l) if [ $OPTARG = "110066" ]; then
-            idx='/mnt/date3/Project/zhaoqy/genome/CRISPR/hs_metabolism_110066/metabolism'
-            adpt='TTTCTAGCTCTAAAAC'
-        elif [ $OPTARG = "160129" ]; then
-            idx='/mnt/date3/Project/zhaoqy/genome/CRISPR/mm_metabolism_160129/sgRNA_lib'
-            adpt='TGTTTCCAGCATAGCTCTTAAAC'
-        elif [ $OPTARG = "162256" ]; then
-	    idx='/mnt/date3/Project/zhaoqy/genome/CRISPR/hs_epigentics_162256/lib'
-	    adpt='ATAGCTCTTAAAC'
-	else
-            echo "Only support 110066, 160129, 162256 libraries, or pass your own bowtie1 index and adapter sequences"
-            exit 1
-        fi;;
         i) idx=$OPTARG;;
         a) adpt=$OPTARG;;
         n) threads=$OPTARG;;
