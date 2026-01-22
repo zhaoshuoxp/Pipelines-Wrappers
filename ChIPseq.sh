@@ -54,8 +54,7 @@ help(){
   Usage: ChIPseq.sh <options> <reads1>|<reads2> 
 
   ### INPUT: Single-end or Paired-end fastq files ###
-  This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN/TAG), depending on the species passed by -g or the index passed by -i, 
-  convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
+  This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN/TAG), depending on the species passed by -g or the index passed by -i, convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
   All results will be store in current (./) directory.
   ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
 
