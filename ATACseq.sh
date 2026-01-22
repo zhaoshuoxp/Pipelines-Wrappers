@@ -33,7 +33,7 @@ bklt_url_hg19='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/list
 bklt_url_hg38='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/hg38-blacklist.v2.bed.gz'
 bklt_url_mm10='https://raw.githubusercontent.com/Boyle-Lab/Blacklist/master/lists/mm10-blacklist.v2.bed.gz'
 # Picard
-picard_url='https://github.com/broadinstitute/picard/releases/download/3.1.0/picard.jar'
+picard_url='https://github.com/broadinstitute/picard/releases/download/3.4.0/picard.jar'
 picard_path='/nfs/baldar/quanyiz/app/picard.jar'
 
 # help message
