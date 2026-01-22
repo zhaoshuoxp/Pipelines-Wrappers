@@ -45,7 +45,7 @@ chromszize_hg19='/nfs/baldar/quanyiz/genome/hg19/hg19.chrom.sizes'
 chromszize_hg38='/nfs/baldar/quanyiz/genome/hg38/hg38.chrom.sizes'
 chromszize_mm10='/nfs/baldar/quanyiz/genome/mm10/mm10.chrom.sizes'
 # Picard
-picard_url='https://github.com/broadinstitute/picard/releases/download/3.1.0/picard.jar'
+picard_url='https://github.com/broadinstitute/picard/releases/download/3.4.0/picard.jar'
 picard_path='/nfs/baldar/quanyiz/app/picard.jar'
 
 # help message
