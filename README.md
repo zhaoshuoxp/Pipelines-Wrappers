@@ -15,7 +15,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
  * [CRISPRlib.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#crisprlibsh): mapping CRISPR sgRNA library, from fastq to tables.
 
 > Requirements:
-> Python3, cutadapt, macs2(>=2.1.1), R, DESeq2, featureCounts, bowtie1/2, bwa,STAR, fastqc, samtools, bedtools, deeptools, cellranger(7 and 8), cellranger-atac and cellranger-arc
+> Python3, cutadapt, macs2, R, DESeq2, featureCounts, bowtie1/2, bwa,STAR, fastqc, samtools, bedtools, deeptools, cellranger(10 by default), cellranger-atac (2.2) and cellranger-arc
 
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu) [![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
 
@@ -164,13 +164,6 @@ help message can be shown by `ChIPseq.sh -h`
 
 ```shell
   Usage: ChIPseq.sh <options> <reads1>|<reads2> 
-
-  ### INPUT: Single-end or Paired-end fastq files ###
-  This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN/Tag), depending on the species passed by -g or the index passed by -i, 
-  convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
-  All results will be store in current (./) directory.
-  ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
-
   Options:
     -g [str] Genome build selection <hg38|hg19|mm10>
     -x [str] Custom BWA index PATH (valid only without -g option)
