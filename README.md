@@ -7,6 +7,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
  * [ATACseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#atacseqsh): bulk ATACseq and CUT&TAG pipeline, from fastq to open chromatin regions/peaks.
  * [ChIPseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chipseqsh): ChIPseq pipeline, from fastq to peak calling step.
  * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differentially expressed genes.
+ * [chrombpnet.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chrombpnetsh): Run chrombpnet workflow, from fragment files to nobias models.
  * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
  * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
  * [trans_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#trans_assemblesh): *de novo* transcript assembly, from fastq to GTF.
@@ -15,7 +16,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
  * [CRISPRlib.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#crisprlibsh): mapping CRISPR sgRNA library, from fastq to tables.
 
 > Requirements:
-> Python3, cutadapt, macs2, R, DESeq2, featureCounts, bowtie1/2, bwa,STAR, fastqc, samtools, bedtools, deeptools, cellranger(10 by default), cellranger-atac (2.2) and cellranger-arc
+> Python3, cutadapt, macs2, R, DESeq2, featureCounts, bowtie1/2, bwa,STAR, fastqc, samtools, bedtools, deeptools, chrombpnet conda env, cellranger(10 by default), cellranger-atac (2.2) and cellranger-arc
 
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu) [![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
 
@@ -327,7 +328,84 @@ This script automatically performs pairwise differential gene expression (DEG) a
 
 
 
-----
+-----
+
+## chrombpnet.sh
+
+This script automates the complete [ChromBPNet workflow](https://github.com/kundajelab/chrombpnet), from peak calling to final model training. It is designed to handle multiple clusters/cell types in parallel.
+
+#### Input
+
+Prepare a text file (e.g., `input_list.txt`) with two columns (tab or space separated):
+
+```
+Endothelial   /path/to/fragments/Endothelial.tsv.gz
+SMC           /path/to/fragments/SMC.tsv.gz
+Fibroblast    /path/to/fragments/Fibroblast.tsv.gz
+```
+
+- **Column 1**: Cluster Name (used for output directory naming).
+
+- **Column 2**: Absolute path to the fragment file (`.tsv.gz`).
+
+And a merged fragment file for bias model 
+
+#### Standard Run (Auto-merge Bias)
+
+If you don't have a merged fragment file, the script will create one automatically. 
+
+**⚠️ Warning:** Ensure your temp directory partition has enough disk space (2-3x total size of fragments) for sorting.
+
+```
+./run_chrombpnet_auto_merge.sh -i input_list.txt
+```
+
+#### Run with Existing Bias File
+
+If you already have a merged bias fragment file, specify it with `-b` to save time.
+
+```
+./run_chrombpnet_auto_merge.sh -i input_list.txt -b /path/to/merged_fragments.tsv.gz
+```
+
+#### Custom Genome / Configuration
+
+You can override default paths (hg38) using flags:
+
+```
+./run_chrombpnet_auto_merge.sh \
+    -i input_list.txt \
+    -g /path/to/mm10.fa \
+    -c /path/to/mm10.chrom.sizes \
+    -l /path/to/mm10.blacklist.bed
+```
+
+#### Arguments
+
+| Flag | Description                     | Default                                        |
+| ---- | ------------------------------- | ---------------------------------------------- |
+| `-i` | **[Required]** Input file list  | N/A                                            |
+| `-b` | Bias fragments file (`.tsv.gz`) | Auto-merge from input list                     |
+| `-g` | Genome FASTA                    | `/home/quanyiz/genome/hg38/hg38.fa`            |
+| `-c` | Chromosome sizes                | `/home/quanyiz/genome/hg38/hg38.chrom.sizes`   |
+| `-l` | Blacklist BED                   | `/home/quanyiz/genome/hg38/hg38.blacklist.bed` |
+| `-d` | Folds directory                 | `/home/quanyiz/genome/bias_models/folds`       |
+
+
+#### Output Structure
+All outputs are generated in the ./results folder:
+
+```
+./results/
+├── macs2/          # MACS2 peaks and logs
+├── bias/           # Global bias model output
+├── models/         # Final ChromBPNet models (per cluster/fold)
+└── tmp/            # Intermediate files (can be deleted after run)
+```
+
+
+
+-----
 
 ## adapt_trim.sh
 
