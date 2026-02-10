@@ -357,6 +357,7 @@ If you don't have a merged fragment file, the script will create one automatical
 **⚠️ Warning:** Ensure your temp directory partition has enough disk space (2-3x total size of fragments) for sorting.
 
 ```
+conda activate chrombpnet
 ./run_chrombpnet_auto_merge.sh -i input_list.txt
 ```
 
