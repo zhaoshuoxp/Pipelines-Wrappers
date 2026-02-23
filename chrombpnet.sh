@@ -63,6 +63,24 @@ if [ ! -f "$INPUT_FILE" ]; then
     exit 1
 fi
 
+# ================= GPU Detection =================
+echo "================================================"
+echo ">>> Detecting Available GPUs"
+if command -v nvidia-smi &> /dev/null; then
+    mapfile -t GPUS < <(nvidia-smi --query-gpu=index --format=csv,noheader)
+else
+    echo "Error: nvidia-smi not found. Cannot detect GPUs."
+    exit 1
+fi
+
+NUM_GPUS=${#GPUS[@]}
+echo "Detected $NUM_GPUS GPU(s): ${GPUS[*]}"
+
+if [ "$NUM_GPUS" -eq 0 ]; then
+    echo "Error: No GPUs available. This pipeline requires GPUs for training."
+    exit 1
+fi
+
 # ================= Configuration Summary =================
 echo "================================================"
 echo "Running ChromBPNet Pipeline"
@@ -72,6 +90,7 @@ echo "Genome Fasta:    $GENOME_FA"
 echo "Chrom Sizes:     $CHROM_SIZES"
 echo "Blacklist:       $BLACKLIST"
 echo "Bias Fragments:  ${BIAS_FRAGMENTS:-[Auto Merge]}"
+echo "Available GPUs:  $NUM_GPUS"
 echo "================================================"
 
 # Setup Directory Structure
@@ -85,10 +104,9 @@ TMP_DIR="${OUT_DIR}/tmp"
 mkdir -p "$MACS2_DIR" "$BIAS_DIR" "$MODEL_DIR" "$TMP_DIR"
 
 # ================= Step 1: MACS2 Callpeak =================
-echo ">>> Step 1: Running MACS2 Callpeak"
+echo ">>> Step 1: Running MACS2 Callpeak (CPU Mode)"
 
 while read -r cluster frag_file; do
-    # Skip empty lines or comments
     [[ -z "$cluster" || "$cluster" =~ ^# ]] && continue
     
     echo "  > Calling peaks for ${cluster}..."
@@ -98,13 +116,11 @@ while read -r cluster frag_file; do
         continue
     fi
 
-    # Check if output exists
     if [ -f "${MACS2_DIR}/${cluster}_peaks.narrowPeak" ]; then
         echo "    [Info] Output exists, skipping MACS2."
         continue
     fi
 
-    # Run in background
     macs2 callpeak \
         -t "$frag_file" \
         -f BED \
@@ -119,18 +135,16 @@ while read -r cluster frag_file; do
         
 done < "$INPUT_FILE"
 
-wait # Wait for all background jobs
+wait # Wait for all background MACS2 jobs
 echo "Step 1 Done."
 
 # ================= Step 2: Preparing Non-Peaks =================
 echo ">>> Step 2: Preparing Non-Peaks (Negatives)"
-
 # 2.1 Slop Blacklist
 bedtools slop -i "$BLACKLIST" -g "$CHROM_SIZES" -b 1057 > "${TMP_DIR}/blacklist_slop.bed"
 
 # 2.2 Merge Peaks
 echo "  > Merging all peaks..."
-# Ensure at least one peak file exists
 count_peaks=$(ls "${MACS2_DIR}"/*_peaks.narrowPeak 2>/dev/null | wc -l)
 if [ "$count_peaks" -eq 0 ]; then
     echo "Error: No peak files found in ${MACS2_DIR}. Step 1 might have failed."
@@ -138,15 +152,11 @@ if [ "$count_peaks" -eq 0 ]; then
 fi
 
 cat "${MACS2_DIR}"/*_peaks.narrowPeak | grep "^chr" | awk '$8+0 > 2' | sort -k1,1 -k2,2n > "${TMP_DIR}/all_peaks_sorted.bed"
-
-# Copy sorted peaks for Bias training
 cp "${TMP_DIR}/all_peaks_sorted.bed" "${MACS2_DIR}/all_peaks.narrowPeak"
 
-# Bedtools Merge & Intersect
 bedtools merge -i "${TMP_DIR}/all_peaks_sorted.bed" > "${TMP_DIR}/union_peaks_3col.bed"
 intersectBed -a "${TMP_DIR}/union_peaks_3col.bed" -b "${TMP_DIR}/blacklist_slop.bed" -v > "${TMP_DIR}/union_final_3col.bed"
 
-# Format to narrowPeak
 awk -v OFS="\t" '{
     width = $3 - $2;
     summit = int(width / 2);
@@ -170,32 +180,14 @@ fi
 echo "Step 2 Done."
 
 # ================= Step 3: Training Bias Model =================
-echo ">>> Step 3: Training Bias Model"
+echo ">>> Step 3: Training Bias Model (Using GPU ${GPUS[0]})"
 
-# [Auto-Merge Logic]
 if [[ -z "$BIAS_FRAGMENTS" ]]; then
     echo "  [Info] No bias fragments file provided (-b). Automatically merging from input list..."
-    
     MERGED_FRAG="${TMP_DIR}/merged_all_fragments.tsv.gz"
-    
-    # Extract paths from input file
     awk '{print $2}' "$INPUT_FILE" > "${TMP_DIR}/frag_list.txt"
     
-    # ------------------ WARNING ------------------
-    echo ""
-    echo "  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    echo "  WARNING: Merging large fragment files requires significant"
-    echo "           disk space for sorting."
-    echo ""
-    echo "  Temporary directory: ${TMP_DIR}"
-    echo "  Ensure this partition has enough free space (approx. 2-3x total size)."
-    echo "  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    echo ""
-    # ---------------------------------------------
-
     echo "  > Merging, Sorting, and Compressing fragments (This may take a while)..."
-    
-    # Merge -> Sort (using TMP_DIR) -> Compress
     cat "${TMP_DIR}/frag_list.txt" | xargs zcat | \
     sort -T "$TMP_DIR" -k1,1V -k2,2n | \
     bgzip > "$MERGED_FRAG"
@@ -207,13 +199,11 @@ if [[ -z "$BIAS_FRAGMENTS" ]]; then
     echo "  > Merged file created at: $BIAS_FRAGMENTS"
 fi
 
-# Validation
 if [ ! -f "$BIAS_FRAGMENTS" ]; then
     echo "  [Error] Bias fragments file not found: $BIAS_FRAGMENTS"
     exit 1
 fi
 
-# Check if Bias model exists
 BIAS_MODEL_PATH=""
 if [ -f "${BIAS_DIR}/global/models/bias.h5" ]; then
     BIAS_MODEL_PATH="${BIAS_DIR}/global/models/bias.h5"
@@ -223,7 +213,8 @@ fi
 
 if [ -z "$BIAS_MODEL_PATH" ]; then
     echo "  > Training global bias model using: $(basename "$BIAS_FRAGMENTS")"
-    chrombpnet bias pipeline \
+    
+    CUDA_VISIBLE_DEVICES=${GPUS[0]} chrombpnet bias pipeline \
         -ifrag "$BIAS_FRAGMENTS" \
         -d "ATAC" \
         -g "$GENOME_FA" \
@@ -248,12 +239,17 @@ fi
 echo "Step 3 Done. Using Bias Model: $BIAS_MODEL_PATH"
 
 # ================= Step 4: Training Cluster Models =================
-echo ">>> Step 4: Training Cluster Models"
+echo ">>> Step 4: Training Cluster Models (Parallel on $NUM_GPUS GPUs)"
+
+declare -A gpu_pids
+for gpu in "${GPUS[@]}"; do
+    gpu_pids[$gpu]=""
+done
 
 while read -r cluster frag_file; do
     [[ -z "$cluster" || "$cluster" =~ ^# ]] && continue
     
-    echo "Processing Cluster: ${cluster}"
+    echo "Queuing Cluster: ${cluster}"
     peak_file="${MACS2_DIR}/${cluster}_peaks.narrowPeak"
     
     for fold in {0..4}; do
@@ -261,30 +257,52 @@ while read -r cluster frag_file; do
         current_tmp_dir="${TMP_DIR}/${cluster}_fold${fold}"
         mkdir -p "$current_out_dir" "$current_tmp_dir"
         
-        # Resume capability
         if [ -f "${current_out_dir}/models/chrombpnet_nobias.h5" ]; then
-            echo "    Fold ${fold} already finished. Skipping."
+            echo "    Fold ${fold} for ${cluster} already finished. Skipping."
             continue
         fi
-
-        echo "  > Training Fold ${fold}..."
         
-        chrombpnet pipeline \
-            -ifrag "$frag_file" \
-            -d "ATAC" \
-            -g "$GENOME_FA" \
-            -c "$CHROM_SIZES" \
-            -p "$peak_file" \
-            -n "${MACS2_DIR}/union_filter_negatives.bed" \
-            -fl "${FOLDS_DIR}/fold_${fold}.json" \
-            -b "$BIAS_MODEL_PATH" \
-            -o "$current_out_dir" \
-            --tmpdir "$current_tmp_dir" \
-            > "${current_out_dir}/train.log" 2>&1
+        assigned_gpu=""
+        while [ -z "$assigned_gpu" ]; do
+            for gpu in "${GPUS[@]}"; do
+                pid=${gpu_pids[$gpu]}
+                if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+                    assigned_gpu=$gpu
+                    break
+                fi
+            done
             
-        echo "    Fold ${fold} Done."
+            if [ -z "$assigned_gpu" ]; then
+                wait -n 2>/dev/null || sleep 5
+            fi
+        done
+        
+        echo "  > Assigned [${cluster} - Fold ${fold}] to GPU ${assigned_gpu}"
+        
+        (
+            CUDA_VISIBLE_DEVICES=$assigned_gpu chrombpnet pipeline \
+                -ifrag "$frag_file" \
+                -d "ATAC" \
+                -g "$GENOME_FA" \
+                -c "$CHROM_SIZES" \
+                -p "$peak_file" \
+                -n "${MACS2_DIR}/union_filter_negatives.bed" \
+                -fl "${FOLDS_DIR}/fold_${fold}.json" \
+                -b "$BIAS_MODEL_PATH" \
+                -o "$current_out_dir" \
+                --tmpdir "$current_tmp_dir" \
+                > "${current_out_dir}/train.log" 2>&1
+                
+            echo "    [Done] ${cluster} - Fold ${fold} finished on GPU ${assigned_gpu}"
+        ) &
+        
+        gpu_pids[$assigned_gpu]=$!
+        
     done
 done < "$INPUT_FILE"
+
+echo "  > All folds queued. Waiting for remaining background jobs to finish..."
+wait
 
 echo "=================================================="
 echo "All Pipeline Steps Finished Successfully!"
