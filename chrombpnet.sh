@@ -106,7 +106,7 @@ mkdir -p "$MACS2_DIR" "$BIAS_DIR" "$MODEL_DIR" "$TMP_DIR"
 # ================= Step 1: MACS2 Callpeak =================
 echo ">>> Step 1: Running MACS2 Callpeak (CPU Mode)"
 
-while read -r cluster frag_file; do
+while read -r cluster frag_file || [[ -n "$cluster" ]]; do
     [[ -z "$cluster" || "$cluster" =~ ^# ]] && continue
     
     echo "  > Calling peaks for ${cluster}..."
