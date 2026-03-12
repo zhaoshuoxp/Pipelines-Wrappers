@@ -330,13 +330,15 @@ This script automatically performs pairwise differential gene expression (DEG) a
 
 -----
 
-## chrombpnet.sh
+# chrombpnet.sh
 
 This script automates the complete [ChromBPNet workflow](https://github.com/kundajelab/chrombpnet), from peak calling to final model training. It is designed to handle multiple clusters/cell types in parallel.
 
-#### Input
+### Input
 
 Prepare a text file (e.g., `input_list.txt`) with two columns (tab or space separated):
+
+Plaintext
 
 ```
 Endothelial   /path/to/fragments/Endothelial.tsv.gz
@@ -344,64 +346,92 @@ SMC           /path/to/fragments/SMC.tsv.gz
 Fibroblast    /path/to/fragments/Fibroblast.tsv.gz
 ```
 
-- **Column 1**: Cluster Name (used for output directory naming).
+- **Column 1:** Cluster Name (used for output directory and file naming).
+- **Column 2:** Absolute path to the fragment file (`.tsv.gz`).
 
-- **Column 2**: Absolute path to the fragment file (`.tsv.gz`).
+------
 
-And a merged fragment file for bias model 
+### Standard Run (Auto-merge Bias)
 
-#### Standard Run (Auto-merge Bias)
+If you don't have a merged fragment file for the bias model, the script will create one automatically by merging all fragments in your input list. **⚠️ Warning:** Ensure your temp directory partition has enough disk space (2-3x total size of fragments) for sorting.
 
-If you don't have a merged fragment file, the script will create one automatically. 
-
-**⚠️ Warning:** Ensure your temp directory partition has enough disk space (2-3x total size of fragments) for sorting.
+Bash
 
 ```
 conda activate chrombpnet
-./run_chrombpnet_auto_merge.sh -i input_list.txt
+./chrombpnet.sh -i input_list.txt
 ```
 
-#### Run with Existing Bias File
+### Run with Advanced Peak Downsampling 
+
+When merging peaks from multiple single-cell clusters, the total peak count can easily exceed the optimal range for ChromBPNet training (typically 150k - 300k). Enable the advanced downsampling engine (`-s`) to automatically evaluate mathematical inflection points (Robust Scaled Composite Score) and apply proportional quotas to protect rare cell populations.
+
+Bash
+
+```
+# Enable downsampling with the default target of 300,000 peaks
+./chrombpnet.sh -i input_list.txt -s
+
+# Enable downsampling and set a custom target peak count (e.g., 150,000)
+./chrombpnet.sh -i input_list.txt -s -t 150000
+```
+
+### Run with Existing Bias File
 
 If you already have a merged bias fragment file, specify it with `-b` to save time.
 
+Bash
+
 ```
-./run_chrombpnet_auto_merge.sh -i input_list.txt -b /path/to/merged_fragments.tsv.gz
+./chrombpnet.sh -i input_list.txt -b /path/to/merged_fragments.tsv.gz
 ```
 
-#### Custom Genome / Configuration
+### Custom Genome / Configuration
 
 You can override default paths (hg38) using flags:
 
+Bash
+
 ```
-./run_chrombpnet_auto_merge.sh \
+./chrombpnet.sh \
     -i input_list.txt \
     -g /path/to/mm10.fa \
     -c /path/to/mm10.chrom.sizes \
     -l /path/to/mm10.blacklist.bed
 ```
 
-#### Arguments
+------
 
-| Flag | Description                     | Default                                        |
-| ---- | ------------------------------- | ---------------------------------------------- |
-| `-i` | **[Required]** Input file list  | N/A                                            |
-| `-b` | Bias fragments file (`.tsv.gz`) | Auto-merge from input list                     |
-| `-g` | Genome FASTA                    | `/home/quanyiz/genome/hg38/hg38.fa`            |
-| `-c` | Chromosome sizes                | `/home/quanyiz/genome/hg38/hg38.chrom.sizes`   |
-| `-l` | Blacklist BED                   | `/home/quanyiz/genome/hg38/hg38.blacklist.bed` |
-| `-d` | Folds directory                 | `/home/quanyiz/genome/bias_models/folds`       |
+### Arguments
 
+| Flag     | Description                                                  | Default                                              |
+| -------- | ------------------------------------------------------------ | ---------------------------------------------------- |
+| **`-i`** | **[Required]** Input file list                               | N/A                                                  |
+| **`-s`** | Enable advanced downsampling (Robust Scaled Knee + Proportional Fallback) | Disabled                                             |
+| **`-t`** | Target peak count for downsampling (requires `-s`)           | 300000                                               |
+| **`-b`** | Bias fragments file (`.tsv.gz`)                              | Auto-merge from input list                           |
+| **`-g`** | Genome FASTA                                                 | `/home/quanyiz/genome/hg38/hg38.fa`                  |
+| **`-c`** | Chromosome sizes                                             | `/home/quanyiz/genome/hg38/hg38.chrom.sizes`         |
+| **`-l`** | Blacklist BED                                                | `/home/quanyiz/genome/hg38/hg38-blacklist.v2.bed`    |
+| **`-f`** | Fold 0 JSON                                                  | `/home/quanyiz/genome/bias_models/folds/fold_0.json` |
+| **`-d`** | Folds directory                                              | `/home/quanyiz/genome/bias_models/folds`             |
 
-#### Output Structure
-All outputs are generated in the ./results folder:
+Export to Sheets
+
+------
+
+### Output Structure
+
+All outputs are generated in the `./results` folder or the directory where the script is executed:
+
+Plaintext
 
 ```
-./results/
-├── macs2/          # MACS2 peaks and logs
-├── bias/           # Global bias model output
-├── models/         # Final ChromBPNet models (per cluster/fold)
-└── tmp/            # Intermediate files (can be deleted after run)
+./
+├── macs2/          # MACS2 peaks, logs, and final union peak files
+├── bias/           # Global bias model output (bias.h5)
+├── models/         # Final ChromBPNet models (organized per cluster/fold)
+└── tmp/            # Intermediate files (can be safely deleted after a successful run)
 ```
 
 
