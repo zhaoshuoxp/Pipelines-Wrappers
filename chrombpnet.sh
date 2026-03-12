@@ -4,7 +4,7 @@
 # Genome Paths
 DEFAULT_GENOME_FA="/home/quanyiz/genome/hg38/hg38.fa"
 DEFAULT_CHROM_SIZES="/home/quanyiz/genome/hg38/hg38.chrom.sizes"
-DEFAULT_BLACKLIST="/home/quanyiz/genome/hg38/hg38.blacklist.bed"
+DEFAULT_BLACKLIST="/home/quanyiz/genome/hg38/hg38-blacklist.v2.bed"
 
 # Folds Paths
 DEFAULT_FOLDS_JSON="/home/quanyiz/genome/bias_models/folds/fold_0.json"
@@ -19,6 +19,10 @@ FOLDS_JSON="$DEFAULT_FOLDS_JSON"
 FOLDS_DIR="$DEFAULT_FOLDS_DIR"
 BIAS_FRAGMENTS="" # Defaults to empty, triggering auto-merge logic
 
+# Downsample Configurations
+ENABLE_DOWNSAMPLE=false
+TARGET_PEAKS=300000
+
 # ================= Helper Functions =================
 usage() {
     echo "Usage: $0 -i <input_list.txt> [options]"
@@ -27,6 +31,8 @@ usage() {
     echo "  -i  Input file (2 columns: ClusterName FragmentPath)"
     echo ""
     echo "Options:"
+    echo "  -s  Enable advanced downsampling (Robust Scaled Knee + Proportional Fallback)"
+    echo "  -t  Target peak count for downsampling [Default: $TARGET_PEAKS]"
     echo "  -b  Bias Fragments File [Default: Auto-merge from input list]"
     echo "  -g  Genome Fasta        [Default: $DEFAULT_GENOME_FA]"
     echo "  -c  Chrom Sizes         [Default: $DEFAULT_CHROM_SIZES]"
@@ -38,7 +44,7 @@ usage() {
 }
 
 # ================= Argument Parsing =================
-while getopts "i:g:c:l:f:d:b:h" opt; do
+while getopts "i:g:c:l:f:d:b:st:h" opt; do
     case "$opt" in
         i) INPUT_FILE="$OPTARG" ;;
         g) GENOME_FA="$OPTARG" ;;
@@ -47,6 +53,8 @@ while getopts "i:g:c:l:f:d:b:h" opt; do
         f) FOLDS_JSON="$OPTARG" ;;
         d) FOLDS_DIR="$OPTARG" ;;
         b) BIAS_FRAGMENTS="$OPTARG" ;;
+        s) ENABLE_DOWNSAMPLE=true ;;
+        t) TARGET_PEAKS="$OPTARG" ;;
         h) usage ;;
         *) usage ;;
     esac
@@ -63,23 +71,30 @@ if [ ! -f "$INPUT_FILE" ]; then
     exit 1
 fi
 
-# ================= GPU Detection =================
+# ================= GPU Detection & Management =================
 echo "================================================"
 echo ">>> Detecting Available GPUs"
-if command -v nvidia-smi &> /dev/null; then
-    mapfile -t GPUS < <(nvidia-smi --query-gpu=index --format=csv,noheader)
-else
+if ! command -v nvidia-smi &> /dev/null; then
     echo "Error: nvidia-smi not found. Cannot detect GPUs."
     exit 1
 fi
 
-NUM_GPUS=${#GPUS[@]}
-echo "Detected $NUM_GPUS GPU(s): ${GPUS[*]}"
+FREE_MEM_THRESHOLD=2000 
+
+get_hardware_free_gpus() {
+    nvidia-smi --query-gpu=index,memory.used --format=csv,noheader,nounits | \
+    awk -v thresh="$FREE_MEM_THRESHOLD" -F', ' '$2 < thresh {print $1}'
+}
+
+mapfile -t ALL_GPUS < <(nvidia-smi --query-gpu=index --format=csv,noheader)
+NUM_GPUS=${#ALL_GPUS[@]}
 
 if [ "$NUM_GPUS" -eq 0 ]; then
-    echo "Error: No GPUs available. This pipeline requires GPUs for training."
+    echo "Error: No GPUs available on this system."
     exit 1
 fi
+echo "Detected $NUM_GPUS total GPU(s) on the system."
+
 
 # ================= Configuration Summary =================
 echo "================================================"
@@ -90,18 +105,22 @@ echo "Genome Fasta:    $GENOME_FA"
 echo "Chrom Sizes:     $CHROM_SIZES"
 echo "Blacklist:       $BLACKLIST"
 echo "Bias Fragments:  ${BIAS_FRAGMENTS:-[Auto Merge]}"
+echo "Downsample:      $ENABLE_DOWNSAMPLE (Target: $TARGET_PEAKS)"
 echo "Available GPUs:  $NUM_GPUS"
 echo "================================================"
 
 # Setup Directory Structure
 BASE_DIR=$(pwd)
-OUT_DIR="${BASE_DIR}/results"
+OUT_DIR="${BASE_DIR}"
 MACS2_DIR="${OUT_DIR}/macs2"
 BIAS_DIR="${OUT_DIR}/bias"
 MODEL_DIR="${OUT_DIR}/models"
 TMP_DIR="${OUT_DIR}/tmp"
 
 mkdir -p "$MACS2_DIR" "$BIAS_DIR" "$MODEL_DIR" "$TMP_DIR"
+export TMPDIR="${OUT_DIR}/tmp"
+export TEMP="${OUT_DIR}/tmp"
+export TMP="${OUT_DIR}/tmp"
 
 # ================= Step 1: MACS2 Callpeak =================
 echo ">>> Step 1: Running MACS2 Callpeak (CPU Mode)"
@@ -143,7 +162,7 @@ echo ">>> Step 2: Preparing Non-Peaks (Negatives)"
 # 2.1 Slop Blacklist
 bedtools slop -i "$BLACKLIST" -g "$CHROM_SIZES" -b 1057 > "${TMP_DIR}/blacklist_slop.bed"
 
-# 2.2 Merge Peaks
+# 2.2 Merge Peaks (Advanced Strategy)
 echo "  > Merging all peaks..."
 count_peaks=$(ls "${MACS2_DIR}"/*_peaks.narrowPeak 2>/dev/null | wc -l)
 if [ "$count_peaks" -eq 0 ]; then
@@ -151,17 +170,117 @@ if [ "$count_peaks" -eq 0 ]; then
     exit 1
 fi
 
-cat "${MACS2_DIR}"/*_peaks.narrowPeak | grep "^chr" | awk '$8+0 > 2' | sort -k1,1 -k2,2n > "${TMP_DIR}/all_peaks_sorted.bed"
-cp "${TMP_DIR}/all_peaks_sorted.bed" "${MACS2_DIR}/all_peaks.narrowPeak"
+cat "${MACS2_DIR}"/*_peaks.narrowPeak | grep "^chr" | awk '($8+0 > 2) && ($7+0 > 2)' | sort -k1,1 -k2,2n > "${TMP_DIR}/all_peaks_sorted.narrowPeak"
+cp "${TMP_DIR}/all_peaks_sorted.narrowPeak" "${MACS2_DIR}/all_peaks.narrowPeak"
 
-bedtools merge -i "${TMP_DIR}/all_peaks_sorted.bed" > "${TMP_DIR}/union_peaks_3col.bed"
-intersectBed -a "${TMP_DIR}/union_peaks_3col.bed" -b "${TMP_DIR}/blacklist_slop.bed" -v > "${TMP_DIR}/union_final_3col.bed"
+if [ "$ENABLE_DOWNSAMPLE" = true ]; then
+    echo "  > Advanced Downsampling Enabled. Target: $TARGET_PEAKS"
+    
+    bedtools cluster -i "${TMP_DIR}/all_peaks_sorted.narrowPeak" | sort -k11,11n -k8,8nr | awk '!seen[$11]++' | cut -f1-10 > "${TMP_DIR}/union_peaks_best.narrowPeak"
+    intersectBed -a "${TMP_DIR}/union_peaks_best.narrowPeak" -b "${TMP_DIR}/blacklist_slop.bed" -v > "${MACS2_DIR}/union_baseline.narrowPeak"
+    UNION_BASE=$(wc -l < "${MACS2_DIR}/union_baseline.narrowPeak")
+    
+    if [ "$UNION_BASE" -le "$TARGET_PEAKS" ]; then
+        echo "  > Baseline union peaks ($UNION_BASE) is already <= $TARGET_PEAKS. Skipping downsampling."
+        cp "${MACS2_DIR}/union_baseline.narrowPeak" "${MACS2_DIR}/union_final.narrowPeak"
+    else
+        echo "  > Baseline ($UNION_BASE) exceeds $TARGET_PEAKS. Calculating Robust Scaled Composite Score..."
+        rm -f "${TMP_DIR}"/*.scored_peaks
+        rm -f "${TMP_DIR}/all_knee_peaks.narrowPeak"
 
-awk -v OFS="\t" '{
-    width = $3 - $2;
-    summit = int(width / 2);
-    print $1, $2, $3, ".", "0", ".", "0", "0", "0", summit
-}' "${TMP_DIR}/union_final_3col.bed" > "${MACS2_DIR}/union_final.narrowPeak"
+        for peak_file in $(ls -1 "${MACS2_DIR}"/*_peaks.narrowPeak|grep -v all_peaks.narrowPeak) ; do
+            bname=$(basename "$peak_file")
+            awk '($8+0 > 2) && ($7+0 > 2)' "$peak_file" > "${TMP_DIR}/$bname.filtered"
+            N=$(wc -l < "${TMP_DIR}/$bname.filtered")
+            if [ "$N" -eq 0 ]; then continue; fi
+
+            FC_99=$(awk '{print $7}' "${TMP_DIR}/$bname.filtered" | sort -n | awk '{a[NR]=$1} END {idx=int(NR*0.99); if(idx==0) idx=1; print a[idx]}')
+            PVAL_99=$(awk '{print $8}' "${TMP_DIR}/$bname.filtered" | sort -n | awk '{a[NR]=$1} END {idx=int(NR*0.99); if(idx==0) idx=1; print a[idx]}')
+            FC_MIN=$(awk '{print $7}' "${TMP_DIR}/$bname.filtered" | sort -n | head -n 1)
+            PVAL_MIN=$(awk '{print $8}' "${TMP_DIR}/$bname.filtered" | sort -n | head -n 1)
+
+            awk -v fc99="$FC_99" -v pval99="$PVAL_99" -v fcmin="$FC_MIN" -v pvalmin="$PVAL_MIN" '
+            {
+                fc = $7; pval = $8;
+                if (fc > fc99) fc = fc99;
+                if (pval > pval99) pval = pval99;
+                
+                fcrange = fc99 - fcmin; if(fcrange<=0) fcrange=1e-6;
+                pvalrange = pval99 - pvalmin; if(pvalrange<=0) pvalrange=1e-6;
+                
+                score = ((fc - fcmin) / fcrange) * ((pval - pvalmin) / pvalrange);
+                print $0 "\t" score;
+            }' "${TMP_DIR}/$bname.filtered" | sort -k11,11nr > "${TMP_DIR}/$bname.scored_peaks"
+
+            KNEE=$(awk '{scores[NR]=$11} END {
+                N=NR;
+                if(N<3000) { print N; exit; }
+                y1=scores[1]; yN=scores[N];
+                A = y1 - yN; B = N - 1; C = yN - N * y1;
+                max_dist = -1; knee = N;
+                for(i=1; i<=N; i++) {
+                    dist = A * i + B * scores[i] + C;
+                    if(dist < 0) dist = -dist;
+                    if(dist > max_dist) { max_dist = dist; knee = i; }
+                }
+                minkeep = int(N * 0.2);
+                if(minkeep < 5000) minkeep = 5000;
+                if(minkeep > N) minkeep = N;
+                if(knee < minkeep) knee = minkeep;
+                print knee;
+            }' "${TMP_DIR}/$bname.scored_peaks")
+
+            echo "    - $bname | Total: $N | Knee cut: $KNEE"
+            head -n "$KNEE" "${TMP_DIR}/$bname.scored_peaks" >> "${TMP_DIR}/all_knee_peaks.narrowPeak"
+        done
+
+        grep "^chr" "${TMP_DIR}/all_knee_peaks.narrowPeak" | sort -k1,1 -k2,2n > "${TMP_DIR}/all_knee_sorted.narrowPeak"
+
+        bedtools cluster -i "${TMP_DIR}/all_knee_sorted.narrowPeak" | \
+            sort -k12,12n -k11,11nr | \
+            awk '!seen[$12]++' | \
+            cut -f1-10 > "${TMP_DIR}/union_knee_best.narrowPeak"
+
+        intersectBed -a "${TMP_DIR}/union_knee_best.narrowPeak" -b "${TMP_DIR}/blacklist_slop.bed" -v > "${MACS2_DIR}/union_knee_final.narrowPeak"
+
+        KNEE_UNION=$(wc -l < "${MACS2_DIR}/union_knee_final.narrowPeak")
+        
+        if [ "$KNEE_UNION" -ge "$TARGET_PEAKS" ]; then
+            echo "  > Knee method yielded >= $TARGET_PEAKS peaks ($KNEE_UNION). Using Knee cutoffs directly!"
+            cp "${MACS2_DIR}/union_knee_final.narrowPeak" "${MACS2_DIR}/union_final.narrowPeak"
+        else
+            echo "  > Knee method yielded $KNEE_UNION < $TARGET_PEAKS. Falling back to Proportional Scaled Score Quota..."
+            RATIO=$(awk -v t="$TARGET_PEAKS" -v b="$UNION_BASE" 'BEGIN {print t/b}')
+            rm -f "${TMP_DIR}/all_quota_peaks.narrowPeak"
+            for scored_file in "${TMP_DIR}"/*.scored_peaks; do
+                N=$(wc -l < "$scored_file")
+                QUOTA=$(awk -v n="$N" -v r="$RATIO" 'BEGIN {printf "%.0f", n * r}')
+                head -n "$QUOTA" "$scored_file" >> "${TMP_DIR}/all_quota_peaks.narrowPeak"
+            done
+
+            grep "^chr" "${TMP_DIR}/all_quota_peaks.narrowPeak" | sort -k1,1 -k2,2n > "${TMP_DIR}/all_quota_sorted.narrowPeak"
+            
+            bedtools cluster -i "${TMP_DIR}/all_quota_sorted.narrowPeak" | \
+                sort -k12,12n -k11,11nr | \
+                awk '!seen[$12]++' | \
+                cut -f1-10 > "${TMP_DIR}/union_quota_best.narrowPeak"
+                
+            intersectBed -a "${TMP_DIR}/union_quota_best.narrowPeak" -b "${TMP_DIR}/blacklist_slop.bed" -v > "${MACS2_DIR}/union_final.narrowPeak"
+            FINAL=$(wc -l < "${MACS2_DIR}/union_final.narrowPeak")
+            echo "  > Proportional fallback successful! Final union peaks: $FINAL"
+        fi
+    fi
+else
+    echo "  > Downsampling Disabled. Using baseline Cluster & Pick Max strategy."
+    bedtools cluster -i "${TMP_DIR}/all_peaks_sorted.narrowPeak" | \
+        sort -k11,11n -k8,8nr | \
+        awk '!seen[$11]++' | \
+        cut -f1-10 > "${TMP_DIR}/union_peaks_best.narrowPeak"
+        
+    intersectBed -a "${TMP_DIR}/union_peaks_best.narrowPeak" -b "${TMP_DIR}/blacklist_slop.bed" -v > "${MACS2_DIR}/union_final.narrowPeak"
+    FINAL=$(wc -l < "${MACS2_DIR}/union_final.narrowPeak")
+    echo "  > Final union peaks: $FINAL"
+fi
 
 # 2.3 ChromBPNet Prep
 if [ ! -d "${MACS2_DIR}/union_filter" ]; then
@@ -172,15 +291,14 @@ if [ ! -d "${MACS2_DIR}/union_filter" ]; then
         -p "${MACS2_DIR}/union_final.narrowPeak" \
         -o "${MACS2_DIR}/union_filter" \
         -fl "$FOLDS_JSON" \
-        -br "$BLACKLIST" \
-        --tmpdir "$TMP_DIR"
+        -br "$BLACKLIST" 
 else
     echo "  > Nonpeaks already prepared. Skipping."
 fi
 echo "Step 2 Done."
 
 # ================= Step 3: Training Bias Model =================
-echo ">>> Step 3: Training Bias Model (Using GPU ${GPUS[0]})"
+echo ">>> Step 3: Training Bias Model (Dynamic GPU Allocation)"
 
 if [[ -z "$BIAS_FRAGMENTS" ]]; then
     echo "  [Info] No bias fragments file provided (-b). Automatically merging from input list..."
@@ -212,9 +330,20 @@ elif [ -f "${BIAS_DIR}/global_bias_models_bias.h5" ]; then
 fi
 
 if [ -z "$BIAS_MODEL_PATH" ]; then
-    echo "  > Training global bias model using: $(basename "$BIAS_FRAGMENTS")"
+    BIAS_GPU=""
+    while [ -z "$BIAS_GPU" ]; do
+        free_gpus=($(get_hardware_free_gpus))
+        if [ ${#free_gpus[@]} -gt 0 ]; then
+            BIAS_GPU="${free_gpus[0]}"
+        else
+            echo "  > [Waiting] No free GPU found for Bias training. Retrying in 30s..."
+            sleep 30
+        fi
+    done
+
+    echo "  > Training global bias model using actual free GPU: ${BIAS_GPU}"
     
-    CUDA_VISIBLE_DEVICES=${GPUS[0]} chrombpnet bias pipeline \
+    CUDA_VISIBLE_DEVICES=$BIAS_GPU chrombpnet bias pipeline \
         -ifrag "$BIAS_FRAGMENTS" \
         -d "ATAC" \
         -g "$GENOME_FA" \
@@ -242,7 +371,7 @@ echo "Step 3 Done. Using Bias Model: $BIAS_MODEL_PATH"
 echo ">>> Step 4: Training Cluster Models (Parallel on $NUM_GPUS GPUs)"
 
 declare -A gpu_pids
-for gpu in "${GPUS[@]}"; do
+for gpu in "${ALL_GPUS[@]}"; do
     gpu_pids[$gpu]=""
 done
 
@@ -264,7 +393,9 @@ while read -r cluster frag_file; do
         
         assigned_gpu=""
         while [ -z "$assigned_gpu" ]; do
-            for gpu in "${GPUS[@]}"; do
+            hardware_free_gpus=($(get_hardware_free_gpus))
+        
+            for gpu in "${hardware_free_gpus[@]}"; do
                 pid=${gpu_pids[$gpu]}
                 if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
                     assigned_gpu=$gpu
@@ -273,11 +404,11 @@ while read -r cluster frag_file; do
             done
             
             if [ -z "$assigned_gpu" ]; then
-                wait -n 2>/dev/null || sleep 5
+                wait -n 2>/dev/null || sleep 10
             fi
         done
         
-        echo "  > Assigned [${cluster} - Fold ${fold}] to GPU ${assigned_gpu}"
+        echo "  > Assigned [${cluster} - Fold ${fold}] to currently available GPU ${assigned_gpu}"
         
         (
             CUDA_VISIBLE_DEVICES=$assigned_gpu chrombpnet pipeline \
