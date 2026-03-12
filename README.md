@@ -332,7 +332,7 @@ This script automatically performs pairwise differential gene expression (DEG) a
 
 # chrombpnet.sh
 
-This script automates the complete [ChromBPNet workflow](https://github.com/kundajelab/chrombpnet), from peak calling to final model training. It is designed to handle multiple clusters/cell types in parallel.
+This script automates the complete ChromBPNet workflow, from peak calling to final model training. It is designed to handle multiple clusters/cell types in parallel and features an advanced, dynamic peak downsampling module to balance single-cell data.
 
 ### Input
 
