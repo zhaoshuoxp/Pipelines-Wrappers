@@ -682,76 +682,69 @@ All results will be store in current (./) directory.
 
 ------
 
-## CRISPRlib.sh
+### CRISPRlib.sh
 
-This script uses cutadapt trimming the input fastq files to get the sgRNA sequences (20nt) according to the adaptor sequence on the 5' end next to the sgRNA, and then aligns these sequences to bowtie index build with the reference sgRNA library. 
+This script automates the preprocessing, alignment, and counting of CRISPR sgRNA reads. It takes a raw sgRNA library list (TSV/CSV) to automatically build a Bowtie1 index on the fly. Then, it uses `cutadapt` to trim the input FASTQ files, extracting the 20nt sgRNA sequences based on a user-provided 5' adapter. Finally, it aligns these trimmed reads to the generated index and summarizes the read counts for each sgRNA.
 
 #### Input
 
-* The fastq file containing sgRNA sequences.
+1. **Reads:** A raw or clean FASTQ file (`.fq` or `.fq.gz`) containing the sequencing reads.
+2. **Library:** A comma-separated (CSV) or tab-separated (TSV) file containing your sgRNA library details. The first column must be the sgRNA ID/Name, and the second column must be the sgRNA sequence.
 
 #### Usage
 
-help message can be shown by `CRISPRlib.sh -h`
+You can display the help message by running `CRISPRlib.sh -h`.
 
-```shell
-    Usage: CRISPRlib.sh <options> <reads_clean.fq.gz>
-    Options:
-    -l [str] library selection <110066|160129|162256>
-    -i [str] Custom bowtie index PATH
-    -a [str] Custom adapter sequence
-    -p [str] Prefix of output
-    -n [int] Threads (1 default)
-    -h Print this help message
+Plaintext
+
+```
+Usage: CRISPRlib.sh <options> <reads_clean.fq.gz>
+
+Options:
+  -s [file] sgRNA sequence list (TSV or CSV format: ID <tab/comma> sequence) [Required]
+  -a [str]  Custom adapter sequence [Required]
+  -p [str]  Prefix of output
+  -n [int]  Threads (12 default)
+  -h        Print this help message
 ```
 
 #### Example
 
-1. First make sure your sgRNA library is in [FASTA](https://www.ncbi.nlm.nih.gov/genbank/fastaformat/) format, such as:
+First, ensure your sgRNA library is in a simple CSV or TSV format. For example (`sample.csv`):
 
-```shell
->sgZC3H12A_5
-GGGCAGCGACCTGAGACCAG
->sgZC3H12A_6
-GGAGTGGAAGCGCTTCATCG
-...
+Plaintext
+
+```
+sgZC3H12A_5,GGGCAGCGACCTGAGACCAG
+sgZC3H12A_6,GGAGTGGAAGCGCTTCATCG
 ```
 
-Here is an example to format a csv file (let's say sgRNA name is in 1st column and sequence in 2nd column) to FASTA:
+*(Note: You no longer need to manually convert this to FASTA or run `bowtie-build` yourself. The script handles this automatically.)*
 
-```shell
-awk -F',' '{print ">"$1"\n"$2}' sample.csv > sample.fa
+Now you can run `CRISPRlib.sh` by simply providing your library file, adapter sequence, and FASTQ file:
+
+Bash
+
+```
+CRISPRlib.sh -n 12 -s sample.csv -a YOURADAPTORSEQUENCE -p test_ lib_R2.fastq.gz
 ```
 
-2. Then build bowite1 index using this FASTA:
-
-```shell
-bowtie-build --threads 12 sample.fa sgLib
-```
-
-This will generate a few index files with the prefix "sgLib" 
-
-3. Now you can run CRISPRlib.sh with your own library and adaptor sequence.
-
-```shell
-CRISPRlib.sh -n 12 -i /path/to/index/with/prefix -a YOURADAPTORSEQUENCE -p test lib_R2.fastq.gz
-```
-
-> The adaptor sequence is 5'-end next to the sgRNA, depends on the vector used. 8nt or more would be recommended.
-
-> Note: edit line53 to 58 or insert new options in the script if you want to automatically assign your own index path and adaptor sequences with -l.
+**Note on Adapters:** The adapter sequence (`-a`) should be the sequence on the 5'-end immediately preceding the sgRNA, which depends on the vector used. Providing 8nt or more is highly recommended for accurate trimming.
 
 #### Output
 
-All results will be store in current (./) directory.
+All results will be stored in the current (`./`) directory.
 
-* {prifix}.tr.fq.gz: trimmed fastq containing the sgRNA only (20bp)
-* {prefix}.sam: bowtie1 alignment
-* {prefix}.srt.bam:  bowtie1 alignment in sorted and indexed BAM format 
-* {prefix}.srt.bam.bai:  bowtie1 alignment index
-* {pre}.log: trimming and alignment summary
-* {pre}.counts.tsv: a table delimited text with sgRNA name (1st column) and its count number (2nd column)
-* {pre}.table.tsv: insert the actual sequence between the name and count compared to counts.tsv
+- **`{prefix}ref.fa`**: The intermediate FASTA file automatically generated from your TSV/CSV.
+- **`{prefix}ref_index.\*`**: The Bowtie1 index files built from the FASTA.
+- **`{prefix}tr.fq.gz`**: Trimmed FASTQ containing only the extracted sgRNA sequences (20bp).
+- **`{prefix}sam`**: Raw Bowtie1 alignment output.
+- **`{prefix}bam`**: Bowtie1 alignment in BAM format.
+- **`{prefix}srt.bam`**: Bowtie1 alignment in sorted and indexed BAM format.
+- **`{prefix}srt.bam.bai`**: Bowtie1 alignment index.
+- **`{prefix}log`**: Trimming and alignment summary and logs.
+- **`{prefix}counts.tsv`**: A tab-delimited text table with the sgRNA name (1st column) and its total read count (2nd column).
+- **`{prefix}table.tsv`**: A tab-delimited text table containing the read count (1st column), actual aligned sequence (2nd column), and sgRNA name (3rd column).
 
 ------
 Author [@zhaoshuoxp](https://github.com/zhaoshuoxp) 
