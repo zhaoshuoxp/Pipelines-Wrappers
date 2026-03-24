@@ -76,7 +76,7 @@ chmod 755 cellranger.sh
 
 All results will be store in current (./) directory.
 
-* For indivdual cellranger count run, each samples will be stored in a filder named by their predicted prefixes.
+* For indivdual cellranger count run, each samples will be stored in a folder named by their predicted prefixes.
 * For cellranger aggr run, aggregated data will be stored in "aggr" folder and a aggr.csv will be created if no csv file designated.
 
 > For more details of the cellranger output, see [RNA](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/outputs/cr-outputs-overview), [ATAC](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/using/count), and [Multiome](https://www.10xgenomics.com/support/software/cell-ranger-arc/latest/analysis/outputs/understanding-output)
