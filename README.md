@@ -37,7 +37,7 @@ Paired-end FASTQ files following the cellranger demultiplexed naming conventions
 
 help message can be shown by `cellranger.sh -h`
 
-```shell
+```
  Usage: cellranger.sh [options] <fastq_directory | output_directory>
 
 Options:
@@ -58,7 +58,7 @@ Options:
 
 #### Example
 
-```shell
+```
 wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/cellranger.sh
 chmod 755 cellranger.sh
 # run cellranger count individually
@@ -97,7 +97,7 @@ Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fas
 
 help message can be shown by `ATACseq.sh -h`
 
-```shell
+```
 Usage: ATAC.sh <options> -g <hg38|hg19|mm10> <reads1>|..<reads2> 
   Options:
     -g [str] Genome build selection <hg38|hg19|mm10>
@@ -116,7 +116,7 @@ Usage: ATAC.sh <options> -g <hg38|hg19|mm10> <reads1>|..<reads2>
 
 #### Example
 
-```shell
+```
 wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ATACseq.sh
 chmod 755 ATACseq.sh
 ./ATACseq.sh -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
@@ -124,7 +124,7 @@ chmod 755 ATACseq.sh
 
 Alternatively, you may use [chromap](https://github.com/haowenz/chromap) aligner to speed up the processing:
 
-```shell
+```
 ./ATACseq.sh -c -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
@@ -164,7 +164,7 @@ Or single-end fastq file with `-s`.
 
 help message can be shown by `ChIPseq.sh -h`
 
-```shell
+```
   Usage: ChIPseq.sh <options> <reads1>|<reads2> 
   Options:
     -g [str] Genome build selection <hg38|hg19|mm10>
@@ -187,14 +187,14 @@ help message can be shown by `ChIPseq.sh -h`
 
 #### Example
 
-```shell
+```
 wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/ChIPseq.sh
 chmod 755 ChIPseq.sh
 ./ChIPseq.sh -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 Alternatively, you may use chromap aligner to speed up the processing :
 
-```shell
+```
 ./ChIPseq.sh -c -g hg19 -p test -t 24 /path/to/test_R1.fastq.gz /path/to/test_R2.fastq.gz
 ```
 
@@ -221,7 +221,7 @@ All results will be store in current (./) directory.
 
 test_pe.bed (and input_pe.bed) can be used for macs2 peak calling in BEDPE mode:
 
-```shell
+```
 macs2 callpeak -t test_pe.bed -c input_pe.bed -f BEDPE -g hs -n test
 ```
 
@@ -246,7 +246,7 @@ This script performs quality control on fastq files, aligning reads to either th
 
 > Single-end not supported
 
-```shell
+```
 ls -1 ./
 cond1_rep1_R1.fastq.gz 
 cond1_rep1_R2.fastq.gz 
@@ -261,7 +261,7 @@ cond2_rep2_R2.fastq.gz
 
 And a text file with meta information. i.e.
 
-```shell
+```
 Sample  Group
 cond1_rep1  group1
 cond1_rep2  group1
@@ -272,7 +272,7 @@ cond2_rep2  group2
 
 You can use the script to scan fastq files and generate the text file:
 
-```shell
+```
 wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/RNAseq.sh
 chmod 755 RNAseq.sh 
 ./RNAseq.sh -p /path/to/directory/contains/fastq/
@@ -286,7 +286,7 @@ Then the meta.txt will be created and opened with VIM. Sample column (1st) shoul
 
 help message can be shown by `RNAseq.sh -h`
 
-```shell
+```
 Usage: RNAseq.sh <options> -m meta.txt </PATH/to/fastq/> 
   Options:
     -m [str] /PATH/to/meta.txt
@@ -301,13 +301,13 @@ Usage: RNAseq.sh <options> -m meta.txt </PATH/to/fastq/>
 
 #### Example
 
-```shell
+```
 ./RNAseq.sh -s hg -m meta.txt -t 24 /path/to/directory/contains/fastq/
 ```
 
 Alternatively, you may use your custom genome and transcriptome reference:
 
-```shell
+```
 ./RNAseq.sh -i /path/to/STAR/index -g /path/to/GTF -m meta.txt -t 24 /path/to/directory/contains/fastq/
 ```
 
@@ -339,8 +339,6 @@ This script automates the complete ChromBPNet workflow, from peak calling to fin
 
 Prepare a text file (e.g., `input_list.txt`) with two columns (tab or space separated):
 
-Plaintext
-
 ```
 Endothelial   /path/to/fragments/Endothelial.tsv.gz
 SMC           /path/to/fragments/SMC.tsv.gz
@@ -356,8 +354,6 @@ Fibroblast    /path/to/fragments/Fibroblast.tsv.gz
 
 If you don't have a merged fragment file for the bias model, the script will create one automatically by merging all fragments in your input list. **⚠️ Warning:** Ensure your temp directory partition has enough disk space (2-3x total size of fragments) for sorting.
 
-Bash
-
 ```
 conda activate chrombpnet
 ./chrombpnet.sh -i input_list.txt
@@ -366,8 +362,6 @@ conda activate chrombpnet
 ### Run with Advanced Peak Downsampling 
 
 When merging peaks from multiple single-cell clusters, the total peak count can easily exceed the optimal range for ChromBPNet training (typically 150k - 300k). Enable the advanced downsampling engine (`-s`) to automatically evaluate mathematical inflection points (Robust Scaled Composite Score) and apply proportional quotas to protect rare cell populations.
-
-Bash
 
 ```
 # Enable downsampling with the default target of 300,000 peaks
@@ -381,8 +375,6 @@ Bash
 
 If you already have a merged bias fragment file, specify it with `-b` to save time.
 
-Bash
-
 ```
 ./chrombpnet.sh -i input_list.txt -b /path/to/merged_fragments.tsv.gz
 ```
@@ -390,8 +382,6 @@ Bash
 #### Custom Genome / Configuration
 
 You can override default paths (hg38) using flags:
-
-Bash
 
 ```
 ./chrombpnet.sh \
@@ -424,8 +414,6 @@ Export to Sheets
 #### Output Structure
 
 All outputs are generated in the `./results` folder or the directory where the script is executed:
-
-Plaintext
 
 ```
 ./
@@ -460,16 +448,12 @@ Ensure the following tools are installed and available in your Linux/Unix enviro
 
 The most basic run only requires your input list (`-i`) and the target population code (`-p`):
 
-Bash
-
 ```
 chmod +x run_proxy_ld.sh
 ./LDlookup.sh -i target_snps.txt -p AFR
 ```
 
 #### Custom Parameters
-
-Bash
 
 ```
 ./LDlookup.sh -i target_snps.txt -p EUR -m 0.05 -w 250000 -r 0.8 -o EUR_Proxies_R2_08.tsv
@@ -493,8 +477,6 @@ Bash
 #### Input Format
 
 The input file (`-i`) should be a plain text file with one SNP per line. The script is highly fault-tolerant and accepts a mix of formats:
-
-Plaintext
 
 ```
 # Supported formats:
@@ -539,7 +521,7 @@ This script is separated from ChIPseq.sh, it trims adapter sequences from fastq 
 
 help message can be shown by `adapt_trim.sh -h`
 
-```shell
+```
 Usage: adapt_trim.sh <options> <reads1>|..<reads2
     Options:
     	-p Prefix of output
@@ -551,7 +533,7 @@ Usage: adapt_trim.sh <options> <reads1>|..<reads2
 
 #### Example
 
-```shell
+```
 wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/adapt_trim.sh
 chmod 755 adapt_trim.sh 
 ./adapt_trim.sh -p test -t 24 test_R1.fastq.gz test_R2.fastq.gz
@@ -695,8 +677,6 @@ This script automates the preprocessing, alignment, and counting of CRISPR sgRNA
 
 You can display the help message by running `CRISPRlib.sh -h`.
 
-Plaintext
-
 ```
 Usage: CRISPRlib.sh <options> <reads_clean.fq.gz>
 
@@ -711,8 +691,6 @@ Options:
 #### Example
 
 First, ensure your sgRNA library is in a simple CSV or TSV format. For example (`sample.csv`):
-
-Plaintext
 
 ```
 sgZC3H12A_5,GGGCAGCGACCTGAGACCAG
