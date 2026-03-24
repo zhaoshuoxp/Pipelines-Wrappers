@@ -1,55 +1,72 @@
 #!/bin/bash
 #####################################
-requires=("cutadapt" "python3" "bowtie" "samtools")
+
+requires=("cutadapt" "python3" "bowtie" "bowtie-build" "samtools")
 for i in ${requires[@]};do
     which $i &>/dev/null || { echo $i not found; exit 1; }
 done
-
 
 help(){
     cat <<-EOF
     Usage: CRISPRlib.sh <options> <reads_clean.fq.gz> 
 
     ### INPUT: fastq files ###
-    This script will trim the input fastq to 20nt after the given sequence with cutadapt, and align the trimmed reads to the reference library build with Bowtie1, depending on the library selection passed by -l or the index and adapter sequence passed by -i and -a,
-    then statisticize each sequence's frequency, and all results will be store in current (./) directory.
+    This script takes an sgRNA list (TSV/CSV), builds a Bowtie1 index,
+    trims the input fastq to 20nt after the given adapter sequence with cutadapt, 
+    aligns the trimmed reads to the newly built reference library with Bowtie1,
+    then statisticizes each sequence's frequency. All results will be stored in current (./) directory.
     ### python3/cutadapt/bowtie1/samtools required ###
 
     Options:
-    -i [str] Custom bowtie index PATH
-    -a [str] Custom adapter sequence
-    -p [str] Prefix of output
-    -n [int] Threads (1 default)
-    -h Print this help message
+    -s [file] sgRNA sequence list (TSV or CSV format: ID <tab/comma> sequence) [Required]
+    -a [str]  Custom adapter sequence [Required]
+    -p [str]  Prefix of output
+    -n [int]  Threads (12 default)
+    -h        Print this help message
 EOF
     exit 0
 }
 
+
+build_index(){
+    local sgrna_file=$1
+    local prefix=$2
+    echo "Converting ${sgrna_file} to FASTA and building Bowtie index..."
+
+    awk -F '[, \t]+' '{gsub(/\r/,"",$2); print ">"$1"\n"$2}' "$sgrna_file" > "${prefix}ref.fa"
+
+    bowtie-build "${prefix}ref.fa" "${prefix}ref_index" --quiet
+    echo "Index built successfully."
+}
+
 main(){
-    cutadapt -g $adpt -j $threads -l 20 -m 19 -o ${pre}tr.fq.gz $1 > ${pre}log
+    local fastq=$1
     
-    bowtie -x $idx -n 0 -p $threads --no-unal -l 20 ${pre}tr.fq.gz -S ${pre}sam 2>&1|tee -a ${pre}log
+    echo "Running cutadapt..."
+    cutadapt -g $adpt -j $threads -l 20 -m 19 -o ${pre}tr.fq.gz "$fastq" > ${pre}log
     
-    samtools view -@ $threads -o ${pre}bam ${pre}sam
+    echo "Running bowtie alignment..."
+    bowtie -x "${pre}ref_index" -n 0 -p $threads --no-unal -l 20 ${pre}tr.fq.gz -S ${pre}sam 2>&1 | tee -a ${pre}log
+    
+    echo "Processing SAM/BAM files..."
+    samtools view -@ $threads -b -o ${pre}bam ${pre}sam  # 添加了 -b 确保输出 BAM
     samtools sort -@ $threads -o ${pre}srt.bam ${pre}bam
     samtools index -@ $threads ${pre}srt.bam
     
-    samtools idxstats  ${pre}srt.bam |awk '$3+0>0' |awk '{print $1"\t"$3}' > ${pre}counts.tsv
+    echo "Calculating statistics..."
+    samtools idxstats ${pre}srt.bam | awk '$3+0>0' | awk '{print $1"\t"$3}' > ${pre}counts.tsv
     
-    awk 'substr($1,1,1)!="@"' ${pre}sam|awk '{print $3"\t"$10}'|sort |uniq -c |awk '{print $2"\t"$3"\t"$1}' > ${pre}table.tsv
+    awk 'substr($1,1,1)!="@"' ${pre}sam | awk '{print $3"\t"$10}' | sort | uniq -c | awk '{print $2"\t"$3"\t"$1}' > ${pre}table.tsv
 }
 
-# no ARGs error
 if [ $# -lt 1 ];then
     help
-    exit 1
 fi
 
-
-while getopts "i:a:n:p:h" arg
+while getopts "s:a:n:p:h" arg
 do
     case $arg in
-        i) idx=$OPTARG;;
+        s) sgrna=$OPTARG;;
         a) adpt=$OPTARG;;
         n) threads=$OPTARG;;
         p) pre=$OPTARG;;
@@ -59,26 +76,36 @@ do
     esac
 done
 
-# shift ARGs to reads
 shift $(($OPTIND - 1))
-# get prefix of output
-if [ -z $pre ];then
-    echo "No -p <prefix> given, use file name as prefix"
-    pre=${1/clean.fq.gz/}
+
+fastq_input=$1
+if [ -z "$fastq_input" ]; then
+    echo "Error: Missing input FastQ file."
+    help
 fi
 
-if [ -z $threads ];then
+if [ -z "$sgrna" ] || [ -z "$adpt" ]; then
+    echo "Error: Both -s <sgRNA file> and -a <adapter> are required."
+    exit 1
+fi
+
+if [ -z "$pre" ];then
+    echo "No -p <prefix> given, use file name as prefix"
+    pre=${fastq_input/clean.fq.gz/}
+fi
+
+if [ -z "$threads" ];then
     echo "Using 12 threads as default"
     threads=12
 fi
 
-main $1
+build_index "$sgrna" "$pre"
 
-# check running status
+main "$fastq_input"
+
 if [ $? -ne 0 ]; then
-    help
+    echo "Run failed"
     exit 1
 else
     echo "Run succeed"
 fi
-
