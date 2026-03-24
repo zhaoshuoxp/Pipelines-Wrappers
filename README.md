@@ -11,7 +11,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
  * [LDlookup.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#ldlookupsh): find Linkage Disequilibrium (LD) proxy SNPs for specific populations.
  * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
  * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
- * [TPS_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#trans_assemblesh): *de novo* transcript assembly, from fastq to GTF.
+ * [TPS_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#tps_assemblesh): *de novo* transcript assembly, from fastq to GTF.
  * [PLAR.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#plarsh): *de novo* [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR) lncRNA discovery pipeline wrapper.
  * [rRNA_dep.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rrna_depsh): ribosomal RNA depletion from fastq files.
  * [CRISPRlib.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#crisprlibsh): mapping CRISPR sgRNA library, from fastq to tables.
