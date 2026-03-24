@@ -464,7 +464,7 @@ Bash
 
 ```
 chmod +x run_proxy_ld.sh
-./run_proxy_ld.sh -i target_snps.txt -p AFR
+./LDlookup.sh -i target_snps.txt -p AFR
 ```
 
 ### Custom Parameters
@@ -472,7 +472,7 @@ chmod +x run_proxy_ld.sh
 Bash
 
 ```
-./run_proxy_ld.sh -i target_snps.txt -p EUR -m 0.05 -w 250000 -r 0.8 -o EUR_Proxies_R2_08.tsv
+./LDlookup.sh -i target_snps.txt -p EUR -m 0.05 -w 250000 -r 0.8 -o EUR_Proxies_R2_08.tsv
 ```
 
 ### Command-Line Arguments
