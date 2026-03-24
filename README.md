@@ -331,11 +331,11 @@ This script automatically performs pairwise differential gene expression (DEG) a
 
 -----
 
-# chrombpnet.sh
+## chrombpnet.sh
 
 This script automates the complete ChromBPNet workflow, from peak calling to final model training. It is designed to handle multiple clusters/cell types in parallel and features an advanced, dynamic peak downsampling module to balance single-cell data.
 
-### Input
+#### Input
 
 Prepare a text file (e.g., `input_list.txt`) with two columns (tab or space separated):
 
@@ -352,7 +352,7 @@ Fibroblast    /path/to/fragments/Fibroblast.tsv.gz
 
 ------
 
-### Standard Run (Auto-merge Bias)
+#### Standard Run (Auto-merge Bias)
 
 If you don't have a merged fragment file for the bias model, the script will create one automatically by merging all fragments in your input list. **⚠️ Warning:** Ensure your temp directory partition has enough disk space (2-3x total size of fragments) for sorting.
 
@@ -377,7 +377,7 @@ Bash
 ./chrombpnet.sh -i input_list.txt -s -t 150000
 ```
 
-### Run with Existing Bias File
+#### Run with Existing Bias File
 
 If you already have a merged bias fragment file, specify it with `-b` to save time.
 
@@ -387,7 +387,7 @@ Bash
 ./chrombpnet.sh -i input_list.txt -b /path/to/merged_fragments.tsv.gz
 ```
 
-### Custom Genome / Configuration
+#### Custom Genome / Configuration
 
 You can override default paths (hg38) using flags:
 
@@ -403,7 +403,7 @@ Bash
 
 ------
 
-### Arguments
+#### Arguments
 
 | Flag     | Description                                                  | Default                                              |
 | -------- | ------------------------------------------------------------ | ---------------------------------------------------- |
@@ -421,7 +421,7 @@ Export to Sheets
 
 ------
 
-### Output Structure
+#### Output Structure
 
 All outputs are generated in the `./results` folder or the directory where the script is executed:
 
@@ -439,7 +439,7 @@ Plaintext
 
 ------
 
-# LDlookup.sh
+## LDlookup.sh
 
 A robust, efficient, and highly automated Bash script designed to find Linkage Disequilibrium (LD) proxy SNPs for specific populations using local, [high-coverage 1000 Genomes Project (1kGP) VCF data](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/) in hg38.
 
@@ -456,7 +456,7 @@ Ensure the following tools are installed and available in your Linux/Unix enviro
 
 ------
 
-### Basic Usage
+#### Basic Usage
 
 The most basic run only requires your input list (`-i`) and the target population code (`-p`):
 
@@ -467,7 +467,7 @@ chmod +x run_proxy_ld.sh
 ./LDlookup.sh -i target_snps.txt -p AFR
 ```
 
-### Custom Parameters
+#### Custom Parameters
 
 Bash
 
@@ -475,7 +475,7 @@ Bash
 ./LDlookup.sh -i target_snps.txt -p EUR -m 0.05 -w 250000 -r 0.8 -o EUR_Proxies_R2_08.tsv
 ```
 
-### Command-Line Arguments
+#### Command-Line Arguments
 
 | Flag | Long Name   | Description                                                  | Default Value                       |
 | ---- | ----------- | ------------------------------------------------------------ | ----------------------------------- |
@@ -490,7 +490,7 @@ Bash
 
 ------
 
-### Input Format
+#### Input Format
 
 The input file (`-i`) should be a plain text file with one SNP per line. The script is highly fault-tolerant and accepts a mix of formats:
 
@@ -509,7 +509,7 @@ chr19:44911142
 
 ------
 
-### Output Format
+#### Output Format
 
 Upon completion, a tab-separated values (TSV) file is generated (default: `All_Local_Proxy_SNPs_Combined.tsv`), which can be directly imported into R, Python, or Excel.
 
@@ -682,11 +682,11 @@ All results will be store in current (./) directory.
 
 ------
 
-### CRISPRlib.sh
+## CRISPRlib.sh
 
 This script automates the preprocessing, alignment, and counting of CRISPR sgRNA reads. It takes a raw sgRNA library list (TSV/CSV) to automatically build a Bowtie1 index on the fly. Then, it uses `cutadapt` to trim the input FASTQ files, extracting the 20nt sgRNA sequences based on a user-provided 5' adapter. Finally, it aligns these trimmed reads to the generated index and summarizes the read counts for each sgRNA.
 
-#### Input
+### Input
 
 1. **Reads:** A raw or clean FASTQ file (`.fq` or `.fq.gz`) containing the sequencing reads.
 2. **Library:** A comma-separated (CSV) or tab-separated (TSV) file containing your sgRNA library details. The first column must be the sgRNA ID/Name, and the second column must be the sgRNA sequence.
