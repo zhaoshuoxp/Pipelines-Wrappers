@@ -7,7 +7,8 @@ This repository has the following combined shell/awk/python/R scripts which can 
  * [ATACseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#atacseqsh): bulk ATACseq and CUT&TAG pipeline, from fastq to open chromatin regions/peaks.
  * [ChIPseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chipseqsh): ChIPseq pipeline, from fastq to peak calling step.
  * [RNAseq.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rnaseqsh): bulk RNAseq pipeline, from fastq to differentially expressed genes.
- * [chrombpnet.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chrombpnetsh): Run chrombpnet workflow, from fragment files to nobias models.
+ * [chrombpnet.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#chrombpnetsh): run chrombpnet workflow, from fragment files to nobias models.
+ * [LDlookup.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#ldlookupsh): find Linkage Disequilibrium (LD) proxy SNPs for specific populations.
  * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
  * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
  * [trans_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#trans_assemblesh): *de novo* transcript assembly, from fastq to GTF.
@@ -433,6 +434,95 @@ Plaintext
 ├── models/         # Final ChromBPNet models (organized per cluster/fold)
 └── tmp/            # Intermediate files (can be safely deleted after a successful run)
 ```
+
+
+
+------
+
+# LDlookup.sh
+
+A robust, efficient, and highly automated Bash script designed to find Linkage Disequilibrium (LD) proxy SNPs for specific populations using local, [high-coverage 1000 Genomes Project (1kGP) VCF data](http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/) in hg38.
+
+By leveraging local `bcftools` and `PLINK1.9`, this script completely bypasses the rate limits and network latency of online APIs (like LDlink), making it ideal for processing large batches of SNPs in seconds.
+
+Ensure the following tools are installed and available in your Linux/Unix environment `$PATH`:
+
+1. **`bcftools`**: For rapid VCF region extraction and sample subsetting.
+2. **`plink` (v1.9 recommended)**: For blazing-fast LD calculations.
+3. **`curl` & `python3`**: Used strictly for the Ensembl API coordinate fetch (only required if your input contains rsIDs).
+4. **1kGP hg38 Reference Data** http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/:
+   - Chromosome-level `.vcf.gz` files and their indices (`.tbi` or `.csi`).
+   - The population pedigree file: `20130606_g1k_3202_samples_ped_population.txt`.
+
+------
+
+### Basic Usage
+
+The most basic run only requires your input list (`-i`) and the target population code (`-p`):
+
+Bash
+
+```
+chmod +x run_proxy_ld.sh
+./run_proxy_ld.sh -i target_snps.txt -p AFR
+```
+
+### Custom Parameters
+
+Bash
+
+```
+./run_proxy_ld.sh -i target_snps.txt -p EUR -m 0.05 -w 250000 -r 0.8 -o EUR_Proxies_R2_08.tsv
+```
+
+### Command-Line Arguments
+
+| Flag | Long Name   | Description                                                  | Default Value                       |
+| ---- | ----------- | ------------------------------------------------------------ | ----------------------------------- |
+| `-i` | `--input`   | **[Required]** Path to the input plain text file containing your SNPs. | None                                |
+| `-p` | `--pop`     | **[Required]** Target population code (e.g., `AFR`, `EUR`, `GBR`). | None                                |
+| `-v` | `--vcf-dir` | Directory path containing the 1kGP VCF files.                | `/path/to/1000Genome_hg38`          |
+| `-d` | `--ped`     | Full path to the 1kGP PED sample population file.            | `.../20130606_g1k...txt`            |
+| `-m` | `--maf`     | Minimum Allele Frequency threshold to filter out ultra-rare variants. | `0.001`                             |
+| `-w` | `--window`  | LD search window size upstream/downstream (in base pairs).   | `500000` (+/- 500kb = 1Mb total)    |
+| `-r` | `--r2`      | Minimum *R*2 threshold for the output proxies.               | `0` (Outputs all pairs in window)   |
+| `-o` | `--out`     | Output TSV file name.                                        | `All_Local_Proxy_SNPs_Combined.tsv` |
+
+------
+
+### Input Format
+
+The input file (`-i`) should be a plain text file with one SNP per line. The script is highly fault-tolerant and accepts a mix of formats:
+
+Plaintext
+
+```
+# Supported formats:
+rs1234567
+10:44256882:A:C
+chr13:110209271:G:A
+16:72182890
+chr19:44911142
+```
+
+*Note: Even if you provide specific alleles (like `A:C`), the script will verify the actual alleles in the VCF to ensure PLINK runs successfully. However, **your exact original input string will be perfectly preserved** in the output table, ensuring seamless downstream merging with your original datasets.*
+
+------
+
+### Output Format
+
+Upon completion, a tab-separated values (TSV) file is generated (default: `All_Local_Proxy_SNPs_Combined.tsv`), which can be directly imported into R, Python, or Excel.
+
+It contains the following columns:
+
+1. **`CHR_A`**: Chromosome of the Lead SNP.
+2. **`BP_A`**: Physical position of the Lead SNP (hg38).
+3. **`TARGET_SNP`**: **Your exact original input ID** (crucial for `merge()`/`join` operations).
+4. **`CHR_B`**: Chromosome of the Proxy SNP.
+5. **`BP_B`**: Physical position of the Proxy SNP (hg38).
+6. **`PROXY_SNP`**: The Proxy SNP ID found (formatted as `chr:pos:ref:alt`).
+7. **`R2`**: Linkage Disequilibrium *R*2 metric.
+8. **`POPULATION`**: The population code used for this calculation.
 
 
 
