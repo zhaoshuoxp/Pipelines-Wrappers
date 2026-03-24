@@ -11,7 +11,7 @@ This repository has the following combined shell/awk/python/R scripts which can 
  * [LDlookup.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#ldlookupsh): find Linkage Disequilibrium (LD) proxy SNPs for specific populations.
  * [adapt_trim.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#adapt_trimsh): adapter trimming function, seperated from the above pipelines.
  * [cisVar.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#cisvarsh): pipeline wrapper of [cisVar](https://github.com/TheFraserLab/cisVar).
- * [trans_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#trans_assemblesh): *de novo* transcript assembly, from fastq to GTF.
+ * [TPS_assemble.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#trans_assemblesh): *de novo* transcript assembly, from fastq to GTF.
  * [PLAR.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#plarsh): *de novo* [PLAR](http://www.weizmann.ac.il/Biological_Regulation/IgorUlitsky/PLAR) lncRNA discovery pipeline wrapper.
  * [rRNA_dep.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#rrna_depsh): ribosomal RNA depletion from fastq files.
  * [CRISPRlib.sh](https://github.com/zhaoshuoxp/Pipelines-Wrappers#crisprlibsh): mapping CRISPR sgRNA library, from fastq to tables.
@@ -568,7 +568,7 @@ All results will be store in current (./) directory.
   
 
 ------
-## trans_assemble.sh
+## TPS_assemble.sh
 
 This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index and GTF provided) using HISAT2. *De novo* transcripts assembly will be performed by stingtie.
 
@@ -579,7 +579,7 @@ This script QC fastq files and aligns reads to hg19/GRCh37(depends on the index 
 #### Usage
 
 ```shell
-./trans_assemble.sh <reads1> <reads2> <prefix of output> <starnd: fr|rf|un>
+./TPS_assemble.sh <reads1> <reads2> <prefix of output> <starnd: fr|rf|un>
 ```
 
 > NOTE:
