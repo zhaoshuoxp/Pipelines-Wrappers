@@ -18,8 +18,10 @@ aggr='none'
 
 # Default reference paths
 mm10_path='/home/quanyiz/genome/refdata-cellranger-arc-mm10-2020-A-2.0.0/'
-rna_mm10_path='/home/quanyiz/genome/refdata-gex-mm10-2020-A_tdT/'
-hg38_path='/home/quanyiz/genome/refdata-cellranger-arc-GRCh38-2020-A-2.0.0/'
+rna_mm10_path='/home/quanyiz/genome/refdata-gex-mm10-2020-A_tdTlacZ/'
+mm39_path='/home/quanyiz/genome/refdata-cellranger-arc-GRCm39-2024-A/'
+rna_mm39_path='/home/quanyiz/genome/refdata-gex-GRCm39-2024-A_tdTlacZ/'
+hg38_path='/home/quanyiz/genome/refdata-cellranger-arc-GRCh38-2024-A/'
 
 # Help message
 help(){
@@ -27,7 +29,7 @@ help(){
 Usage: cellranger.sh [options] <fastq_directory | output_directory>
 
 Options:
-  -g [str]    Genome build <hg38|mm10> (required unless -x is set)
+  -g [str]    Genome build <hg38|mm10|mm39> (required unless -x is set)
   -m [str]    Data type <rna|atac|multiome> (required)
   -x [str]    Custom reference path (overrides -g)
   -t [int]    Threads (default: 20)
@@ -36,7 +38,9 @@ Options:
   -a          Run aggregation (aggr) mode
   -c [str]    Custom CSV file for aggr (optional)
   -n          Normalize in aggr mode (default: none)
-  -s          Enable secondary analysis (default: off for aggr and multiome)
+  -s          Force ENABLE secondary analysis (overrides default)
+  -S          Force DISABLE secondary analysis (overrides default)
+              Default: ON for rna/atac/multiome, OFF for aggr
   --gex_path  RNA fastq path (for multiome mode)
   --atac_path ATAC fastq path (for multiome mode)
   -h          Show help
@@ -51,13 +55,16 @@ if [[ $# -eq 0 ]]; then
 fi
 
 # Parse arguments (getopt with long options)
-TEMP=$(getopt -o g:m:x:t:r:u:ac:nhs --long gex_path:,atac_path: -n 'cellranger.sh' -- "$@")
+TEMP=$(getopt -o g:m:x:t:r:u:ac:nhsS --long gex_path:,atac_path: -n 'cellranger.sh' -- "$@")
 if [ $? != 0 ]; then
     echo "Terminating..." >&2
     exit 1
 fi
 
 eval set -- "$TEMP"
+
+# secondary_mode: unset(default) | on | off
+secondary_mode=""
 
 while true; do
     case "$1" in
@@ -130,8 +137,11 @@ while true; do
             norm='depth'
             shift ;;
         -s)
-            secondary_flag=1
-            shift ;;  # Explicitly enable secondary analysis
+            secondary_mode="on"
+            shift ;;  # Force enable secondary analysis
+        -S)
+            secondary_mode="off"
+            shift ;;  # Force disable secondary analysis
         -h)
             help
             exit 0 ;;
@@ -150,8 +160,10 @@ if [[ -z $ref_path && -n $genome ]]; then
         ref_path=$hg38_path
     elif [[ $genome == "mm10" ]]; then
         ref_path=$mm10_path
+    elif [[ $genome == "mm39" ]]; then
+        ref_path=$mm39_path
     else
-        echo "Unsupported genome. Use hg38 or mm10 or specify with -x"
+        echo "Unsupported genome. Use hg38, mm10 or mm39, or specify with -x"
         exit 1
     fi
 fi
@@ -203,6 +215,24 @@ process_fragments() {
 }
 
 
+# Resolve final --nosecondary flag based on mode and user override
+resolve_secondary() {
+    if [[ $secondary_mode == "on" ]]; then
+        # Force enable
+        secondary=""
+    elif [[ $secondary_mode == "off" ]]; then
+        # Force disable
+        secondary="--nosecondary"
+    else
+        # Default behavior by mode
+        if [[ $aggr == "aggr" ]]; then
+            secondary="--nosecondary"   # aggr default OFF
+        else
+            secondary=""                # rna/atac/multiome default ON
+        fi
+    fi
+}
+
 
 # Main execution
 main() {
@@ -210,20 +240,16 @@ main() {
     if [[ -z $ref_path ]]; then echo "Missing -g or -x (reference)"; exit 1; fi
 
     # Determine final value of --nosecondary
-    if [[ $secondary_flag -eq 1 ]]; then
-        secondary=""
-    else
-        secondary="--nosecondary"
-    fi
-    
+    resolve_secondary
+    echo "ℹ️  Secondary analysis: $([[ -z $secondary ]] && echo 'ENABLED' || echo 'DISABLED')"
+
     # MULTIOME MODE
     if [[ $mod == "arc" && $aggr != "aggr" ]]; then
         if [[ -z $gex_path || -z $atac_path ]]; then
             echo "Error: --gex_path and --atac_path required in multiome mode"
             exit 1
         fi
-        secondary=""
-        
+
         echo "🔍 Matching RNA and ATAC fastqs by core sample name..."
 
         declare -A rna_prefix_map
@@ -264,9 +290,9 @@ main() {
                     --localcores "$threads" \
                     --localmem "$mem" \
                     $secondary
-                
+
                 process_fragments "${core}_arc" "arc"
-                
+
             else
                 echo "⚠️  No matching ATAC for RNA sample $core"
             fi
@@ -286,12 +312,14 @@ main() {
             --localcores "$threads" \
             --localmem "$mem" \
             $secondary
-            
+
         process_fragments "$runid" "$mod"
-        
+
     else
         if [[ $mod == "rna" && $genome == "mm10" ]]; then
             ref_path=$rna_mm10_path
+        elif [[ $mod == "rna" && $genome == "mm39" ]]; then
+            ref_path=$rna_mm39_path
         fi
         for i in "$1"/*_R1*.f*q.gz; do
             [[ ! -e $i ]] && continue
@@ -306,11 +334,11 @@ main() {
                 --localcores "$threads" \
                 --localmem "$mem" \
                 $added_par $secondary
-                
+
             if [[ $mod == "atac" ]]; then
                 process_fragments "$prefix" "$mod"
             fi
-            
+
         done
     fi
 }
