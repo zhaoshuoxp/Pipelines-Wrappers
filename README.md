@@ -41,7 +41,7 @@ help message can be shown by `cellranger.sh -h`
  Usage: cellranger.sh [options] <fastq_directory | output_directory>
 
 Options:
-  -g [str]    Genome build <hg38|mm10> (required unless -x is set)
+  -g [str]    Genome build <hg38|mm10|mm39> (required unless -x is set)
   -m [str]    Data type <rna|atac|multiome> (required)
   -x [str]    Custom reference path (overrides -g)
   -t [int]    Threads (default: 20)
@@ -50,7 +50,9 @@ Options:
   -a          Run aggregation (aggr) mode
   -c [str]    Custom CSV file for aggr (optional)
   -n          Normalize in aggr mode (default: none)
-  -s          Enable secondary analysis (default: off for aggr and multiome)
+  -s          Force ENABLE secondary analysis (overrides default)
+  -S          Force DISABLE secondary analysis (overrides default)
+              Default: ON for rna/atac/multiome, OFF for aggr
   --gex_path  RNA fastq path (for multiome mode)
   --atac_path ATAC fastq path (for multiome mode)
   -h          Show help
