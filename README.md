@@ -100,7 +100,12 @@ Paired-end fastq files with **_R1/2** suffix, i.e. test_R1.fastq.gz, test_R2.fas
 help message can be shown by `ATACseq.sh -h`
 
 ```
-Usage: ATAC.sh <options> -g <hg38|hg19|mm10> <reads1>|..<reads2> 
+ Usage: ATAC.sh <options> <reads1>|<reads2>
+
+  ### INPUT: Paired-end fastq files ###
+  This script will QC fastq files and align reads to reference genome build with Bowtie2 or chromap, depending on the species passed by -g or the index and other required files passed by -i, -b and -c, convert alignments to filtered BAM/BED and bigwig, then call peaks with MACS2 in BED mode after Tn5 shifting.
+  ### python3/cutadapt/fastqc/bowtie2/samtools/bedtools/deeptools/macs2 required ###
+
   Options:
     -g [str] Genome build selection <hg38|hg19|mm10>
     -x [str] Custom bowtie2 index PATH
@@ -167,23 +172,29 @@ Or single-end fastq file with `-s`.
 help message can be shown by `ChIPseq.sh -h`
 
 ```
-  Usage: ChIPseq.sh <options> <reads1>|<reads2> 
-  Options:
-    -g [str] Genome build selection <hg38|hg19|mm10>
-    -x [str] Custom BWA index PATH (valid only without -g option)
-    -z [str] Custom chromosome size table (valid only without -g option)
-    -p [str] Prefix of output
-    -t [int] Threads (1 default)
-    -s Single-end mod (Paired-end default)
-    -n Manually force Nextera adapters (overrides defaults)
-    -a Use BWA aln algorithm (BWA mem default)
-    -R CUT&RUN mode: Paired-end, Bowtie2, TruSeq adapters 
-    -T CUT&TAG mode: Paired-end, Bowtie2, Nextera adapters 
-    -b [str] Custom Bowtie2 index PATH  (valid only with -u/-T option)
-    -c Using chromap to process FASTQ instead of canonical bowtie2/bwa
-    -i [str] Custom chromap genome index (valid only with -c option)
-    -r [str] Custom chromap genome reference (valid only with -c option)
-    -h Print this help message
+  Usage: ChIPseq.sh <options> <reads1>|<reads2>
+
+  ### INPUT: Single-end or Paired-end fastq files ###
+  This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN/TAG), depending on the species passed by -g or the index passed by -i, convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
+  All results will be store in current (./) directory.
+  ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
+
+  Options:
+    -g [str] Genome build selection <hg38|hg19|mm10>
+    -x [str] Custom BWA index PATH (valid only without -g option)
+    -z [str] Custom chromosome size table (valid only without -g option)
+    -p [str] Prefix of output
+    -t [int] Threads (1 default)
+    -s Single-end mod (Paired-end default)
+    -n Manually force Nextera adapters (overrides defaults)
+    -a Use BWA aln algorithm (BWA mem default)
+    -R CUT&RUN mode: Paired-end, Bowtie2, TruSeq adapters
+    -T CUT&Tag mode: Paired-end, Bowtie2, Nextera adapters
+    -b [str] Custom Bowtie2 index PATH  (valid only with -u/-T option)
+    -c Using chromap to process FASTQ instead of canonical bowtie2/bwa
+    -i [str] Custom chromap genome index (valid only with -c option)
+    -r [str] Custom chromap genome reference (valid only with -c option)
+    -h Print this help message
 
 ```
 
