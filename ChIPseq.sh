@@ -1,11 +1,27 @@
 #!/bin/bash
+# Abort on the first failing command, in functions and subshells too (-E), and
+# on any failing stage of a pipeline. Without this the script used to run to
+# completion and exit 0 even when bwa/Picard/samtools had died halfway.
+set -Eeo pipefail
+trap 'rc=$?; echo "ChIPseq.sh FAILED at line $LINENO (exit $rc)" >&2; exit $rc' ERR
+# NOTE: no `set -u` -- SE mode legitimately leaves read2 ($5) unset.
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
-requires=("cutadapt" "python3" "bowtie2" "bwa" "fastqc" "samtools" "bedtools" "bamCoverage" "chromap" "genomeCoverageBed" "bedSort" "bedGraphToBigWig")
+# always needed, whichever aligner is picked
+requires=("cutadapt" "python3" "samtools" "bedtools" "bamCoverage")
 for i in ${requires[@]};do
 	which $i &>/dev/null || { echo $i not found; exit 1; }
 done
+# checked later, only for the path the options actually select
+requires_bwa=("bwa")
+requires_bowtie2=("bowtie2")
+requires_chromap=("chromap" "genomeCoverageBed" "bedSort" "bedGraphToBigWig")
+check_requires(){
+	for i in "$@";do
+		which $i &>/dev/null || { echo $i not found; exit 1; }
+	done
+}
 
 #### DEFAULT CONFIGURATION ###
 # default Paired-end mod
@@ -15,19 +31,22 @@ aln='bwa'
 alg='mem'
 
 # --- Adapter Sequences ---
+# Only 3' adapters are trimmed (cutadapt -a/-A); there is deliberately no 5'
+# (-g/-G) trimming for ChIP/CUT&RUN/CUT&Tag.
 # TruSeq Universal Adapter (Default for ChIP/CUT&RUN)
 aA_truseq='AGATCGGAAGAGC'
-gG_truseq='GCTCTTCCGATCT'
 # Nextera Transposase Sequence (Default for CUT&Tag)
 aA_nextera='CTGTCTCTTATACACATCT'
-gG_nextera='AGATGTGTATAAGAGACAG'
 
 # Set default adapters to TruSeq
 aA=$aA_truseq
-gG=$gG_truseq
 
 # default 1 core to run
 threads=1
+# minimum MAPQ kept by the post-alignment filter.
+# HISTORY: runs before 2026-07-30 applied no MAPQ filter at all -- pass `-q 0`
+# to reproduce those older results.
+mapq=30
 # BWA index
 bwaindex_hg19='/nfs/baldar/quanyiz/genome/hg19/BWAindex/hg19bwa'
 bwaindex_hg38='/nfs/baldar/quanyiz/genome/hg38/BWAindex/hg38bwa'
@@ -51,71 +70,84 @@ picard_path='/nfs/baldar/quanyiz/app/picard.jar'
 # help message
 help(){
 	cat <<-EOF
-  Usage: ChIPseq.sh <options> <reads1>|<reads2> 
+  Usage: ChIPseq.sh <options> <reads1>|<reads2> 
 
-  ### INPUT: Single-end or Paired-end fastq files ###
-  This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN/TAG), depending on the species passed by -g or the index passed by -i, convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
-  All results will be store in current (./) directory.
-  ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
+  ### INPUT: Single-end or Paired-end fastq files ###
+  This script will QC fastq files and align reads to reference genome with BWA or chromap (bowtie2 for CUT&RUN/TAG), depending on the species passed by -g or the index passed by -i, convert alignments to filtered BAM/BED and bigwig but DOES NOT call peaks.
+  All results will be store in current (./) directory.
+  ### python3/cutadapt/fastqc/bwa/samtools/bedtools/deeptools required ###
 
-  Options:
-    -g [str] Genome build selection <hg38|hg19|mm10>
-    -x [str] Custom BWA index PATH (valid only without -g option)
-    -z [str] Custom chromosome size table (valid only without -g option)
-    -p [str] Prefix of output
-    -t [int] Threads (1 default)
-    -s Single-end mod (Paired-end default)
-    -n Manually force Nextera adapters (overrides defaults)
-    -a Use BWA aln algorithm (BWA mem default)
-    -R CUT&RUN mode: Paired-end, Bowtie2, TruSeq adapters 
-    -T CUT&Tag mode: Paired-end, Bowtie2, Nextera adapters 
-    -b [str] Custom Bowtie2 index PATH  (valid only with -u/-T option)
-    -c Using chromap to process FASTQ instead of canonical bowtie2/bwa
-    -i [str] Custom chromap genome index (valid only with -c option)
-    -r [str] Custom chromap genome reference (valid only with -c option)
-    -h Print this help message
+  Options:
+    -g [str] Genome build selection <hg38|hg19|mm10>
+    -x [str] Custom BWA index PATH (valid only without -g option)
+    -z [str] Custom chromosome size table (valid only without -g option)
+    -p [str] Prefix of output
+    -t [int] Threads (1 default)
+    -q [int] Minimum MAPQ to keep (30 default; use 0 to disable MAPQ filtering,
+             which reproduces the behaviour of runs made before 2026-07-30)
+    -s Single-end mod (Paired-end default)
+    -n Manually force Nextera adapters (overrides defaults)
+    -a Use BWA aln algorithm (BWA mem default)
+    -R CUT&RUN mode: Paired-end, Bowtie2, TruSeq adapters 
+    -T CUT&Tag mode: Paired-end, Bowtie2, Nextera adapters 
+    -b [str] Custom Bowtie2 index PATH  (valid only with -R/-T option)
+    -c Using chromap to process FASTQ instead of canonical bowtie2/bwa
+    -i [str] Custom chromap genome index (valid only with -c option)
+    -r [str] Custom chromap genome reference (valid only with -c option)
+    -h Print this help message
 
 EOF
-	exit 0
+	# error paths call `help 1` so a bad invocation actually exits non-zero
+	exit ${1:-0}
 }
 
 ### main pipeline ###
 
 QC_mapping(){
+	# Read group is required downstream: Picard MarkDuplicates (>=3.x) throws a
+	# NullPointerException on alignments carrying no @RG record.
+	RG="@RG\tID:${3}\tSM:${3}\tLB:${3}\tPL:ILLUMINA"
 	if [ $1 = 'se' ];then
 		# single-end CMD
-		# FastQC 
-		#fastqc -f fastq -t $threads -o fastqc $4 
+		# FastQC 
+		#fastqc -f fastq -t $threads -o fastqc $4
 		# Adapter trimming (use $aA which is dynamically set)
 		cutadapt -m 30 -j $threads -a $aA -o ${3}_trimmed.fastq.gz $4 > ./logs/${3}_cutadapt.log
-		# BWA aln 
+		echo 'BWA mapping summary:' > ./logs/${3}_align.log
+		# BWA aln
 		if [ $2 = 'aln' ];then
-			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed.fastq.gz > ${3}.sai
-			bwa samse $bwaindex ${3}.sai ${3}_trimmed.fastq.gz  > ${3}.sam
+			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed.fastq.gz 2>> ./logs/${3}_align.log > ${3}.sai
+			bwa samse -r "$RG" $bwaindex ${3}.sai ${3}_trimmed.fastq.gz 2>> ./logs/${3}_align.log > ${3}.sam
 			rm ${3}.sai
 		# BWA mem
 		else
-			bwa mem -M -t $threads $bwaindex ${3}_trimmed.fastq.gz > ${3}.sam
+			bwa mem -M -R "$RG" -t $threads $bwaindex ${3}_trimmed.fastq.gz 2>> ./logs/${3}_align.log > ${3}.sam
 		fi
 	else
 		# paired-end CMD
 		# FastQC
 		#fastqc -f fastq -t $threads -o fastqc $4 $5
-		# Adapter trimming (use $aA and $gG which are dynamically set)
+		# Adapter trimming (use $aA which is dynamically set)
 		cutadapt -m 30 -j $threads -a $aA -A $aA -o ${3}_trimmed_R1.fastq.gz -p ${3}_trimmed_R2.fastq.gz $4 $5 > ./logs/${3}_cutadapt.log
-		# BWA aln 
+		# BWA aln
 		if [ $2 = 'aln' ];then
-			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed_R1.fastq.gz > ${3}_R1.sai
-			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed_R2.fastq.gz > ${3}_R2.sai
-			bwa sampe $bwaindex ${3}_R1.sai ${3}_R2.sai ${3}_trimmed_R1.fastq.gz ${3}_trimmed_R2.fastq.gz  > ${3}.sam
+			echo 'BWA mapping summary:' > ./logs/${3}_align.log
+			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed_R1.fastq.gz 2>> ./logs/${3}_align.log > ${3}_R1.sai
+			bwa aln -t $threads -k 2 -l 18 $bwaindex ${3}_trimmed_R2.fastq.gz 2>> ./logs/${3}_align.log > ${3}_R2.sai
+			bwa sampe -r "$RG" $bwaindex ${3}_R1.sai ${3}_R2.sai ${3}_trimmed_R1.fastq.gz ${3}_trimmed_R2.fastq.gz 2>> ./logs/${3}_align.log > ${3}.sam
 			rm ${3}_R1.sai ${3}_R2.sai
 		# CUT&RUN / CUT&Tag mode (Both use Bowtie2)
 		elif [ $2 = 'bowtie2' ]; then
 			# Added --no-mixed --no-discordant for cleaner C&R/C&T results
-			bowtie2 --dovetail --no-mixed --no-discordant --threads $threads -X 1000 -x $bw2index -1 ${3}_trimmed_R1.fastq.gz -2 ${3}_trimmed_R2.fastq.gz -S ${3}.sam
+			# --rg-id is mandatory: bowtie2 only emits the @RG header line when it is set
+			# bowtie2 writes its alignment-rate summary to stderr -- capture it,
+			# it is the primary QC metric for C&R/C&T
+			echo 'Bowtie2 mapping summary:' > ./logs/${3}_align.log
+			bowtie2 --dovetail --no-mixed --no-discordant --threads $threads -X 1000 --rg-id ${3} --rg SM:${3} --rg LB:${3} --rg PL:ILLUMINA -x $bw2index -1 ${3}_trimmed_R1.fastq.gz -2 ${3}_trimmed_R2.fastq.gz -S ${3}.sam 2>> ./logs/${3}_align.log
 		# ChIPseq mode
 		else
-			bwa mem -M -t $threads $bwaindex ${3}_trimmed_R1.fastq.gz ${3}_trimmed_R2.fastq.gz > ${3}.sam
+			echo 'BWA mapping summary:' > ./logs/${3}_align.log
+			bwa mem -M -R "$RG" -t $threads $bwaindex ${3}_trimmed_R1.fastq.gz ${3}_trimmed_R2.fastq.gz 2>> ./logs/${3}_align.log > ${3}.sam
 		fi
 	fi
 }
@@ -123,7 +155,7 @@ QC_mapping(){
 # SAM2BAM and filtering to BED
 sam_bam_bed(){
 	# sam2bam+sort
-	samtools view -b -@ $threads -o ${1}.bam ${1}.sam 
+	samtools view -b -@ $threads -o ${1}.bam ${1}.sam 
 	samtools sort -@ $threads -o ${1}_srt.bam ${1}.bam
 	# single-end CMD
 	if [ $2 = 'se' ];then
@@ -134,14 +166,14 @@ sam_bam_bed(){
 		samtools flagstat -@ $threads ${1}_rm.bam >> ./logs/${1}_align.log
 		# filter out unmapped/failedQC/secondary/duplicates alignments
 		samtools index -@ $threads ${1}_rm.bam
-		samtools view -@ $threads -F 1796 -b -o ${1}_filtered.bam ${1}_rm.bam
+		samtools view -@ $threads -q $mapq -F 1796 -b -o ${1}_filtered.bam ${1}_rm.bam
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
 		samtools index -@ $threads ${1}_filtered.bam
 		bamToBed -i ${1}_filtered.bam > ${1}_se.bed
 		# clean
-		rm ${1}_rm.bam ${1}_rm.bam.bai
+		rm ${1}_rm.bam ${1}_rm.bam.bai ${1}_srt.bam ${1}_srt.bam.bai
 	# paired-end CMD
 	else
 		# download picard.jar for PE duplicates removal
@@ -151,18 +183,19 @@ sam_bam_bed(){
 		fi
 		# mark duplicates
 		## there is an issue of wirting permission on NFS through python and java, have to save at local drive (i.e.~) and move back after
-		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ~/${1}_mkdup.bam -M ~/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
-		mv ~/${1}_dup.log ./logs/
-		mv ~/${1}_mkdup.bam ./
+		## $$ keeps two concurrent runs that share a prefix from clobbering each other's temp files
+		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ~/${1}_$$_mkdup.bam -M ~/${1}_$$_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
+		mv ~/${1}_$$_dup.log ./logs/${1}_dup.log
+		mv ~/${1}_$$_mkdup.bam ./${1}_mkdup.bam
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_mkdup.bam >> ./logs/${1}_align.log
 		# filter our unmapped/failedQC/unpaired/duplicates/secondary alignments
-		samtools view -@ $threads -f 2 -F 1804 -b -o ${1}_filtered.bam ${1}_mkdup.bam
+		samtools view -@ $threads -q $mapq -f 2 -F 1804 -b -o ${1}_filtered.bam ${1}_mkdup.bam
 		samtools index -@ $threads ${1}_filtered.bam
 		echo >> ./logs/${1}_align.log
 		echo 'flagstat after filter:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_filtered.bam >> ./logs/${1}_align.log
-		# sort bam by query name for bedpe 
+		# sort bam by query name for bedpe 
 		samtools sort -n -@ $threads -o ${1}.bam2 ${1}_filtered.bam
 		# bam2bedpe
 		bamToBed -bedpe -i ${1}.bam2 > ${1}.bedpe
@@ -177,18 +210,22 @@ sam_bam_bed(){
 }
 
 chromap_total(){
+	# chromap writes its mapping summary to stderr -- capture it directly.
+	# This used to `tail nohup.out`, which silently logged nothing (or another
+	# job's output) whenever the script was not run under nohup.
+	echo 'chromap mapping summary:' > ./logs/${1}_align.log
 	if [ $2 = 'se' ];then
-		chromap --preset chip -r $chromapref -x $chromapindex -t $threads -1 $3 -o ${1}_se.bed
-		echo 'chromap mapping summary:' > ./logs/${1}_align.log
-		tail -n 14 nohup.out >> ./logs/${1}_align.log
+		chromap --preset chip -r $chromapref -x $chromapindex -t $threads -1 $3 -o ${1}_se.bed 2>> ./logs/${1}_align.log
 		awk 'substr($1,1,3)=="chr"' ${1}_se.bed > ${1}_pri.bed
 	else
-		chromap --preset chip -r $chromapref -x $chromapindex -t $threads -1 $3 -2 $4 -o ${1}_pe.bed
-		echo 'chromap mapping summary:' > ./logs/${1}_align.log
-		tail -n 14 nohup.out >> ./logs/${1}_align.log
+		chromap --preset chip -r $chromapref -x $chromapindex -t $threads -1 $3 -2 $4 -o ${1}_pe.bed 2>> ./logs/${1}_align.log
 		awk 'substr($1,1,3)=="chr"' ${1}_pe.bed > ${1}_pri.bed
+		# `head` closing the pipe early makes gunzip exit 141 (SIGPIPE), which
+		# pipefail would turn into a spurious failure -- disable it just here
+		set +o pipefail
 		len=$(gunzip -c $3 |head -n2|tail -n1|awk '{print length($0)}')
-		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$4,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
+		set -o pipefail
+		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$4,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
 	fi
 	factor=$(wc -l ${1}_pri.bed|awk '{print 1000000/$1}')
 	genomeCoverageBed -scale $factor -i ${1}_pri.bed -g $chromsize -bg > ${1}.bdg
@@ -199,11 +236,10 @@ chromap_total(){
 
 # no ARGs error
 if [ $# -lt 1 ];then
-	help
-	exit 1
+	help 1
 fi
 
-while getopts "g:x:t:sacnp:z:r:i:hRTb:" arg
+while getopts "g:x:t:sacnp:q:z:r:i:hRTb:" arg
 do
 	case $arg in
 		g) if [ $OPTARG = "hg19" ]; then
@@ -212,75 +248,133 @@ do
 			chromapindex=$chromapindex_hg19
 			chromapref=$chromapref_hg19
 			chromsize=$chromszize_hg19
-		   elif [ $OPTARG = "hg38" ]; then
+			elif [ $OPTARG = "hg38" ]; then
 			bwaindex=$bwaindex_hg38
 			bw2index=$bw2index_hg38
 			chromapindex=$chromapindex_hg38
 			chromapref=$chromapref_hg38
 			chromsize=$chromszize_hg38
-		   elif [ $OPTARG = "mm10" ]; then
+			elif [ $OPTARG = "mm10" ]; then
 			bwaindex=$bwaindex_mm10
 			bw2index=$bw2index_mm10
 			chromapindex=$chromapindex_mm10
 			chromapref=$chromapref_mm10
 			chromsize=$chromszize_mm10
-		   else
+			else
 			echo "Only support hg38, hg19 or mm10, or pass your custom genome index"
 			exit 1
-		   fi;;
+			fi;;
 		# BWA index PATH
 		x) bwaindex=$OPTARG;;
 		t) threads=$OPTARG;;
 		# single-end mod
-		s) mod='se';;
+		s) se_requested=1;;
 		# BWA algorithm
-		a) alg='aln';;
+		a) aln_requested=1;;
 		c) aln='chromap';;
 		# Manual Nextera override
-		n) aA=$aA_nextera
-		   gG=$gG_nextera;;
+		n) force_nextera=1;;
 		p) prefix=$OPTARG;;
+		q) mapq=$OPTARG;;
 		z) chromsize=$OPTARG;;
 		r) chromapref=$OPTARG;;
 		i) chromapindex=$OPTARG;;
 		# CUT&RUN Mode
-		R) alg='bowtie2'
-		   mod='pe'
-		   aA=$aA_truseq
-		   gG=$gG_truseq;;
+		R) protocol='cr';;
 		# CUT&Tag Mode
-		T) alg='bowtie2'
-		   mod='pe'
-		   aA=$aA_nextera
-		   gG=$gG_nextera;;
+		T) protocol='ct';;
 		b) bw2index=$OPTARG;;
 		h) help ;;
-		?) help
-			exit 1;;
+		?) help 1;;
 	esac
 done
 
 # shift ARGs to reads
 shift $(($OPTIND - 1))
+
+# resolve mode presets AFTER the getopts loop, so flag order stops mattering
+if [ -n "$protocol" ];then
+	alg='bowtie2'
+	mod='pe'
+	if [ $protocol = 'ct' ];then
+		aA=$aA_nextera
+	else
+		aA=$aA_truseq
+	fi
+	# reject combinations that used to fall through to the wrong aligner in silence
+	if [ -n "$se_requested" ];then
+		echo "ERROR: -s cannot be combined with -R/-T (CUT&RUN/CUT&Tag are paired-end only)" >&2
+		help 1
+	fi
+	if [ -n "$aln_requested" ];then
+		echo "ERROR: -a (BWA aln) cannot be combined with -R/-T (which select bowtie2)" >&2
+		help 1
+	fi
+	if [ $aln = 'chromap' ];then
+		echo "ERROR: -c (chromap) cannot be combined with -R/-T (which select bowtie2)" >&2
+		help 1
+	fi
+fi
+# -n is applied last so a manual Nextera override always wins over a protocol default
+if [ -n "$force_nextera" ];then
+	aA=$aA_nextera
+fi
+if [ -n "$se_requested" ];then
+	mod='se'
+fi
+if [ -n "$aln_requested" ];then
+	alg='aln'
+fi
+
+# validate the selected path: an unset index makes BWA silently treat read1 as its index
+if [ $aln = 'chromap' ];then
+	check_requires "${requires_chromap[@]}"
+	[ -n "$chromapindex" ] || { echo "ERROR: -c needs -g <build> or -i <chromap index>" >&2; help 1; }
+	[ -n "$chromapref" ] || { echo "ERROR: -c needs -g <build> or -r <genome fasta>" >&2; help 1; }
+	[ -n "$chromsize" ] || { echo "ERROR: -c needs -g <build> or -z <chrom.sizes>" >&2; help 1; }
+	[ -e "$chromapindex" ] || { echo "ERROR: chromap index not found: $chromapindex" >&2; help 1; }
+	[ -e "$chromapref" ] || { echo "ERROR: genome reference not found: $chromapref" >&2; help 1; }
+	[ -e "$chromsize" ] || { echo "ERROR: chrom.sizes not found: $chromsize" >&2; help 1; }
+elif [ $alg = 'bowtie2' ];then
+	check_requires "${requires_bowtie2[@]}"
+	[ -n "$bw2index" ] || { echo "ERROR: -R/-T needs -g <build> or -b <bowtie2 index>" >&2; help 1; }
+	# large indexes use the .bt2l suffix
+	[ -e "${bw2index}.1.bt2" ] || [ -e "${bw2index}.1.bt2l" ] || { echo "ERROR: bowtie2 index not found: ${bw2index}.1.bt2[l]" >&2; help 1; }
+else
+	check_requires "${requires_bwa[@]}"
+	[ -n "$bwaindex" ] || { echo "ERROR: needs -g <build> or -x <BWA index>" >&2; help 1; }
+	[ -e "${bwaindex}.bwt" ] || { echo "ERROR: BWA index not found: ${bwaindex}.bwt" >&2; help 1; }
+fi
+case $mapq in
+	''|*[!0-9]*) echo "ERROR: -q needs a non-negative integer, got: $mapq" >&2; help 1;;
+esac
+[ -n "$1" ] || { echo "ERROR: no FASTQ file given" >&2; help 1; }
+[ -e "$1" ] || { echo "ERROR: FASTQ not found: $1" >&2; help 1; }
+if [ $mod = 'pe' ];then
+	[ -n "$2" ] || { echo "ERROR: paired-end mode needs two FASTQ files (use -s for single-end)" >&2; help 1; }
+	[ -e "$2" ] || { echo "ERROR: FASTQ not found: $2" >&2; help 1; }
+fi
+
 # get prefix of output
 if [ -z $prefix ];then
 	echo "No -p <prefix> given, use file name as prefix"
+	# basename: a path-qualified read would otherwise redirect logs into ./logs/<dir>/
 	if [ $mod = 'se' ];then
-		prefix=${1%.*}
+		prefix=$(basename ${1%.*})
 	else
-		prefix=${1%_R1*}
+		prefix=$(basename ${1%_R1*})
 	fi
 fi
 
 # main
 main(){
-	if [ ! -d logs ];then 
+	if [ ! -d logs ];then 
 		mkdir logs
 	fi
 
-	#if [ ! -d fastqc ];then 
+	#if [ ! -d fastqc ];then 
 	#	mkdir fastqc
-	#fi 
+	#fi 
 	
 	if [ $aln = 'chromap' ];then
 		chromap_total $prefix $mod $1 $2
@@ -293,15 +387,9 @@ main(){
 
 main $1 $2
 
-# check running status
-if [ $? -ne 0 ]; then
-	help
-	exit 1
-else
-	echo "Run succeed"
-fi
+echo "Run succeed"
 
 ################ END ################
-#          Created by Aone          #
-#     quanyi.zhao@stanford.edu      #
+#          Created by Aone          #
+#     quanyi.zhao@stanford.edu      #
 ################ END ################
