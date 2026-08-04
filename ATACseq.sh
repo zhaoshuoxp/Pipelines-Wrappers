@@ -1,4 +1,10 @@
 #!/bin/bash
+# Abort on the first failing command, in functions and subshells too (-E), and
+# on any failing stage of a pipeline. Without this the script used to run to
+# completion and exit 0 even when bowtie2/Picard/samtools had died halfway.
+set -Eeo pipefail
+trap 'rc=$?; echo "ATACseq.sh FAILED at line $LINENO (exit $rc)" >&2; exit $rc' ERR
+# NOTE: no `set -u` -- SE mode legitimately leaves read2 unset.
 
 # check dependences
 # multi-core support requires cutadapt installed and run by python3
@@ -11,9 +17,8 @@ done
 # default Paired-end mod
 mod='pe'
 aln='bowtie2'
-# default Nextera adapters
+# default Nextera adapters (3' only; there is deliberately no 5'/-g trimming)
 aA='CTGTCTCTTATACACATCT'
-gG='AGATGTGTATAAGAGACAG'
 # default 1 core to run
 threads=1
 # genome build url
@@ -59,10 +64,15 @@ help(){
     -z [str] Custom chromosome size table
     -h Print this help message
 EOF
-	exit 0
+	# error paths call `help 1` so a bad invocation actually exits non-zero
+	exit ${1:-0}
 }
 
 QC_mapping(){
+	# Read group is required downstream: Picard MarkDuplicates (>=3.x) throws a
+	# NullPointerException on alignments carrying no @RG record.
+	# --rg-id is mandatory: bowtie2 only emits the @RG header line when it is set.
+	rg_opts="--rg-id ${2} --rg SM:${2} --rg LB:${2} --rg PL:ILLUMINA"
 	if [ $1 = 'se' ];then
 		# single-end CMD
 		# FastQC 
@@ -70,19 +80,20 @@ QC_mapping(){
 		# Nextera adapter trimming
 		cutadapt -m 30 -j $threads -a $aA -o ${2}_trimmed.fastq.gz $3 > ./logs/${2}_cutadapt.log
 		# Bowtie2 align
-		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index -U ${2}_trimmed.fastq.gz -S ${2}.sam
+		# bowtie2 writes its alignment-rate summary to stderr -- capture it directly.
+		# This used to `tail nohup.out`, which silently logged nothing (or another
+		# job's output) whenever the script was not run under nohup.
 		echo 'Bowtie2 mapping summary:' > ./logs/${2}_align.log
-		tail -n 15 nohup.out >> ./logs/${2}_align.log
+		bowtie2 -X 2000 --local --mm -p $threads $rg_opts -x $bw2index -U ${2}_trimmed.fastq.gz -S ${2}.sam 2>> ./logs/${2}_align.log
 	else
 		# paired-end CMD
 		# FastQC
 		fastqc -f fastq -t $threads -o fastqc $3 $4
 		# TruSeq adapter trimming
 		cutadapt -m 30 -j $threads -a $aA -A $aA -o ${2}_trimmed_R1.fastq.gz -p ${2}_trimmed_R2.fastq.gz $3 $4 > ./logs/${2}_cutadapt.log
-		# Bowtie2 align
-		bowtie2 -X 2000 --local --mm -p $threads -x $bw2index -1 ${2}_trimmed_R1.fastq.gz -2 ${2}_trimmed_R2.fastq.gz -S ${2}.sam
+		# Bowtie2 align (see SE branch for why stderr is captured here)
 		echo 'Bowtie2 mapping summary:' > ./logs/${2}_align.log
-		tail -n 15 nohup.out >> ./logs/${2}_align.log
+		bowtie2 -X 2000 --local --mm -p $threads $rg_opts -x $bw2index -1 ${2}_trimmed_R1.fastq.gz -2 ${2}_trimmed_R2.fastq.gz -S ${2}.sam 2>> ./logs/${2}_align.log
 	fi
 }
 
@@ -101,9 +112,13 @@ sam_bam_bed(){
 		samtools index -@ $threads ${1}_rm.bam 
 		samtools idxstats ${1}_rm.bam | cut -f 1 |grep -v M | xargs samtools view -b -@ $threads -o ${1}_chrM.bam ${1}_rm.bam
 		# filter out unmapped/failedQC/secondary/duplicates alignments
-		Mreads=$(samtools idxstats ${1}_rm.bam|grep ^chrM|awk '{print $2}')
-		fra=$(samtools idxstats ${1}_rm.bam|awk '{sum+=$2}END{print "'"$Mreads"'"*100/sum}')
+		# idxstats column 3 is mapped reads; column 2 is the chromosome LENGTH.
+		# This used to read $2, so the SE chrM fraction was computed from
+		# sequence lengths and was meaningless.
+		Mreads=$(samtools idxstats ${1}_rm.bam|grep ^chrM|awk '{print $3}')
+		fra=$(samtools idxstats ${1}_rm.bam|awk '{sum+=$3}END{print "'"$Mreads"'"*100/sum}')
 		echo  "chrM reads = "$Mreads","$fra"%"
+		echo  "chrM reads = "$Mreads","$fra"%" >> ./logs/${1}_align.log
 		samtools view -@ $threads -F 1796 -b -o ${1}_filtered.bam ${1}_chrM.bam
 		samtools index -@ $threads ${1}_filtered.bam
 		bamToBed -i ${1}_filtered.bam > ${1}_se.bed
@@ -121,9 +136,10 @@ sam_bam_bed(){
 		fi
 		# mark duplicates
 		## there is an issue of wirting permission on NFS through python and java, have to save at local drive (i.e.~) and move back after
-		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ~/${1}_mkdup.bam -M ~/${1}_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
-		mv ~/${1}_mkdup.bam ./
-		mv ~/${1}_dup.log ./logs/
+		## $$ keeps two concurrent runs that share a prefix from clobbering each other's temp files
+		java -jar $picard_path MarkDuplicates -I ${1}_srt.bam -O ~/${1}_$$_mkdup.bam -M ~/${1}_$$_dup.log --REMOVE_DUPLICATES false --VALIDATION_STRINGENCY SILENT
+		mv ~/${1}_$$_mkdup.bam ./${1}_mkdup.bam
+		mv ~/${1}_$$_dup.log ./logs/${1}_dup.log
 		echo 'flagstat after mkdup:' >> ./logs/${1}_align.log
 		samtools flagstat -@ $threads ${1}_mkdup.bam >> ./logs/${1}_align.log
 		# remove chrM alignments
@@ -181,17 +197,21 @@ peak_calling(){
 }
 
 chromap_total(){
+	# chromap writes its mapping summary to stderr -- capture it directly.
+	# This used to `tail nohup.out`, which silently logged nothing (or another
+	# job's output) whenever the script was not run under nohup.
+	echo 'chromap mapping summary:' > ./logs/${1}_align.log
 	if [ $2 = 'se' ];then
-		chromap --preset atac -r $chromapref -x $chromapindex -t $threads -1 $3 -o ${1}_se.bed
-		echo 'chromap mapping summary:' > ./logs/${1}_align.log
-		tail -n 14 nohup.out >> ./logs/${1}_align.log
+		chromap --preset atac -r $chromapref -x $chromapindex -t $threads -1 $3 -o ${1}_se.bed 2>> ./logs/${1}_align.log
 		awk 'substr($1,1,3)=="chr"' ${1}_se.bed > ${1}_pri.bed
 	else
-		chromap --preset atac -r $chromapref -x $chromapindex -t $threads -1 $3 -2 $4 -o ${1}_pe.bed
-		echo 'chromap mapping summary:' > ./logs/${1}_align.log
-		tail -n 14 nohup.out >> ./logs/${1}_align.log
+		chromap --preset atac -r $chromapref -x $chromapindex -t $threads -1 $3 -2 $4 -o ${1}_pe.bed 2>> ./logs/${1}_align.log
 		awk 'substr($1,1,3)=="chr"' ${1}_pe.bed > ${1}_pri.bed
+		# `head` closing the pipe early makes gunzip exit 141 (SIGPIPE), which
+		# pipefail would turn into a spurious failure -- disable it just here
+		set +o pipefail
 		len=$(gunzip -c $3 |head -n2|tail -n1|awk '{print length($0)}')
+		set -o pipefail
 		awk -v l=$len -v OFS="\t" '{print $1,$2,$2+l,$4,$5,$6"\n"$1,$3-l,$3,$4,$5,$6}'  ${1}_pri.bed > ${1}_se.bed
 	fi
 	factor=$(wc -l ${1}_pri.bed|awk '{print 1000000/$1}')
@@ -211,15 +231,21 @@ chromap_total(){
 		echo "MACS2 version >= 2.1.1 required!"
 		macs2 callpeak -t ../${1}_se.bed -g $sp -n ${1} -f BED --keep-dup all --nomodel --shift -75 --extsize 150 -q 0.05
 	fi
-	# Blacklist filter 
-	intersectBed -v -a ${1}_peaks.narrowPeak $blkt_file > ${1}_filtered.bed
+	# Blacklist filter (the -b was missing here, so this never actually filtered)
+	intersectBed -v -a ${1}_peaks.narrowPeak -b $blkt_file > ${1}_filtered.bed
+	cd ..
 }
 
 # no ARGs error
 if [ $# -lt 1 ];then
-	help
-	exit 1
+	help 1
 fi
+
+# fetch the Boyle-Lab blacklist for a build into ./bklt, loudly on failure
+get_blacklist(){
+	curl -sfL "$1" | gunzip -c > bklt || { echo "ERROR: failed to download blacklist: $1" >&2; exit 1; }
+	[ -s bklt ] || { echo "ERROR: downloaded blacklist is empty: $1" >&2; exit 1; }
+}
 
 while getopts "g:x:b:m:t:sp:z:i:r:ch" arg
 do
@@ -229,21 +255,21 @@ do
 			chromapindex=$chromapindex_hg19
 			chromapref=$chromapref_hg19
 			chromsize=$chromszize_hg19
-			curl -s $bklt_url_hg19 | gunzip -c > bklt
+			get_blacklist $bklt_url_hg19
 			sp='hs'
 		   elif [ $OPTARG = "hg38" ]; then
 			bw2index=$bw2index_hg38
 			chromapindex=$chromapindex_hg38
 			chromapref=$chromapref_hg38
 			chromsize=$chromszize_hg38
-			curl -s $bklt_url_hg38 | gunzip -c > bklt
+			get_blacklist $bklt_url_hg38
 			sp='hs'
 		   elif [ $OPTARG = "mm10" ]; then
 			bw2index=$bw2index_mm10
 			chromapindex=$chromapindex_mm10
 			chromapref=$chromapref_mm10
 			chromsize=$chromszize_mm10
-			curl -s $bklt_url_mm10 | gunzip -c > bklt
+			get_blacklist $bklt_url_mm10
 			sp='mm'
 		   else
 			echo "Only support hg38, hg19 or mm10, or pass your custom genome build"
@@ -263,8 +289,7 @@ do
 		i) chromapindex=$OPTARG;;
 		c) aln='chromap';;
 		h) help ;;
-		?) help
-			exit 1;;
+		?) help 1;;
 	esac
 done
 
@@ -308,15 +333,13 @@ main(){
 
 main $1 $2
 
-# check running status
-if [ $? -ne 0 ]; then
-	help
-	exit 1
-else
-	echo "Run succeed"
-fi
+# `set -e` + the ERR trap above abort the run on any failure, so reaching this
+# line genuinely means success. (The old `if [ $? -ne 0 ]` here only ever saw
+# the status of main's last command, and printed "Run succeed" regardless.)
+echo "Run succeed"
 
 ################ END ################
 #          Created by Aone          #
 #     quanyi.zhao@stanford.edu      #
 ################ END ################
+
