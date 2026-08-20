@@ -25,63 +25,108 @@ This repository has the following combined shell/awk/python/R scripts which can 
 
 ## cellranger.sh
 
-This script runs cellranger automatically for all samples in the specified fastq directory. Sample names are inferred from the fastq filenames, i.e`<prefix>_S*_L*_R?_00*.f*q.gz`. Outputs are saved in the current directory with filenames based on the inferred prefix. The script supports 10x genomic RNA, ATAC, and multiome based on the specified data type (`-m`). The script can also perform aggregations for ATAC and multiome data using `-a` , and optionally `-c` to designate an aggregation csv file. You can find more details on setting up the aggregation csv file for [ATAC](https://support.10xgenomics.com/single-cell-atac/software/pipelines/latest/using/aggr#csv_setup) and [multiome](https://www.10xgenomics.com/support/software/cell-ranger-arc/latest/analysis/aggregating-multiple-gem-wells-aggr#setting-up-an-aggregation-csv).
+This script runs Cell Ranger count or aggr for RNA, ATAC, and multiome data.
 
-> Data type (-m) is also required for aggregation (-a). If no aggregation csv file designated, a csv file will be automatically generated and ALL folders/samples in the provided path will be aggregated.
-
-#### Input
-
-Paired-end FASTQ files following the cellranger demultiplexed naming conventions (cellranger mkfastq), all samples together in a directory.
-
-#### Options
-
-help message can be shown by `cellranger.sh -h`
+For RNA/ATAC count, omitting `--id` and `--sample` enables automatic mode. The script recursively scans the FASTQ root, infers sample prefixes from standard filenames such as:
 
 ```
- Usage: cellranger.sh [options] <fastq_directory | output_directory>
-
-Options:
-  -g [str]    Genome build <hg38|mm10|mm39> (required unless -x is set)
-  -m [str]    Data type <rna|atac|multiome> (required)
-  -x [str]    Custom reference path (overrides -g)
-  -t [int]    Threads (default: 20)
-  -r [int]    Memory in GB (default: 200)
-  -u [int]    Use CellRanger version <7|8|9> (for -m rna only; default is 10)
-  -a          Run aggregation (aggr) mode
-  -c [str]    Custom CSV file for aggr (optional)
-  -n          Normalize in aggr mode (default: none)
-  -s          Force ENABLE secondary analysis (overrides default)
-  -S          Force DISABLE secondary analysis (overrides default)
-              Default: ON for rna/atac/multiome, OFF for aggr
-  --gex_path  RNA fastq path (for multiome mode)
-  --atac_path ATAC fastq path (for multiome mode)
-  -h          Show help
+<prefix>_S*_L*_R?_*.fastq.gz
 ```
 
-#### Example
+FASTQs may be stored together or in sample subdirectories. All lanes with the same exact prefix are passed to one count invocation without merging files. Samples are processed sequentially.
+
+Multiome count accepts either `--libraries CSV` or separate `--gex_path` and `--atac_path` roots.
+
+Aggr accepts an existing CSV with `--csv`. If omitted, complete count directories under `COUNT_ROOT` are discovered and an aggregation CSV is generated automatically. Normalization defaults to `none`.
+
+### Usage
 
 ```
-wget https://raw.githubusercontent.com/zhaoshuoxp/Pipelines-Wrappers/master/cellranger.sh
-chmod 755 cellranger.sh
-# run cellranger count individually
-./cellranger.sh -g mm10 -m atac /path/to/all_samples/
-# run cellranger aggr
-./cellranger.sh -g mm10 -m atac -a /path/to/cellranger/count/output/with/all/samples/
-
-# run cellranger multiome individually
-./cellranger.sh -g mm10 -m multiome --gex_path /path/to/all_samples/GEX/ --atac_path /path/to/all_samples/ATAC/
+cellranger.sh -m <rna|atac> -g GENOME [options] FASTQ_ROOT
+cellranger.sh -m <rna|atac> -g GENOME --sample PREFIX [--id ID] FASTQ_DIRS
+cellranger.sh -m multiome -g GENOME --libraries CSV [options]
+cellranger.sh -m multiome -g GENOME --gex_path DIR --atac_path DIR [options]
+cellranger.sh -m <rna|atac|multiome> -a [--csv CSV | COUNT_ROOT] [options]
 ```
 
-> Sequencing depth normalization is not recommended in most situations. For RNA data, aggregating the data matrix in Seurat/Scanpy is a more efficient way.
+Use `cellranger.sh -h` for the complete option list.
 
-####  Output
+Important options:
 
-All results will be store in current (./) directory.
+```
+-m MODE              rna, atac, or multiome
+-g GENOME            hg38, mm10, or mm39
+-x PATH              Custom reference; overrides -g
+-t N                 Cores; default: 20
+-r GB                Memory; default: 200
+-u VERSION           RNA Cell Ranger version: 7, 8, 9, or 10
+--id ID              Optional run ID; generated when omitted
+--sample PREFIX      Explicit RNA/ATAC FASTQ prefix
+--libraries CSV      Multiome libraries CSV
+--gex_path DIR       Multiome GEX FASTQ root
+--atac_path DIR      Multiome ATAC FASTQ root
+-a                    Run aggr
+-c, --csv CSV        Aggregation CSV
+--normalize MODE     none, mapped for RNA, or depth for ATAC/multiome
+--output-dir DIR     Output path or automatic-mode output root
+--dry                Validate and preview commands
+```
 
-* For indivdual cellranger count run, each samples will be stored in a folder named by their predicted prefixes.
-* For cellranger aggr run, aggregated data will be stored in "aggr" folder and a aggr.csv will be created if no csv file designated.
+### Examples
 
-> For more details of the cellranger output, see [RNA](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/outputs/cr-outputs-overview), [ATAC](https://www.10xgenomics.com/support/software/cell-ranger-atac/latest/analysis/outputs/understanding-output), and [Multiome](https://www.10xgenomics.com/support/software/cell-ranger-arc/latest/analysis/outputs/understanding-output)
+Automatic ATAC count:
+
+```
+./cellranger.sh -m atac -g mm10 -t 12 -r 96 /path/to/atac_fastqs
+```
+
+Explicit RNA count with multiple lanes:
+
+```
+./cellranger.sh -m rna -g mm10 \
+  --sample MySample \
+  /path/to/lane1,/path/to/lane2
+```
+
+Automatic multiome count:
+
+```
+./cellranger.sh -m multiome -g mm10 \
+  --gex_path /path/to/GEX \
+  --atac_path /path/to/ATAC
+```
+
+ATAC aggr without an existing CSV:
+
+```
+./cellranger.sh -m atac -g mm10 -a \
+  --normalize none \
+  /path/to/atac_count_outputs
+```
+
+### Output and restart behavior
+
+If `--output-dir` is omitted, the current directory is used as the output root. Each result is stored under `RUN_ID/`.
+
+Generated multiome libraries CSV and aggregation CSV files are written directly to the current directory.
+
+Automatic status is appended to:
+
+```
+cellranger_auto_rna/status.log
+cellranger_auto_atac/status.log
+cellranger_auto_multiome/status.log
+```
+
+Monitor with:
+
+```
+tail -f cellranger_auto_atac/status.log
+```
+
+Re-running the same command skips complete outputs and resumes incomplete pipestances using deterministic run IDs.
+
+> Sequencing-depth normalization is disabled by default. For large RNA atlases, combine count matrices in Seurat or Scanpy instead of using Cell Ranger RNA aggr.
 
 
 
