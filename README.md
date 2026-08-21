@@ -83,25 +83,19 @@ Automatic ATAC count:
 Explicit RNA count with multiple lanes:
 
 ```
-./cellranger.sh -m rna -g mm10 \
-  --sample MySample \
-  /path/to/lane1,/path/to/lane2
+./cellranger.sh -m rna -g mm10 --sample MySample /path/to/lane1,/path/to/lane2
 ```
 
 Automatic multiome count:
 
 ```
-./cellranger.sh -m multiome -g mm10 \
-  --gex_path /path/to/GEX \
-  --atac_path /path/to/ATAC
+./cellranger.sh -m multiome -g mm10 --gex_path /path/to/GEX --atac_path /path/to/ATAC
 ```
 
 ATAC aggr without an existing CSV:
 
 ```
-./cellranger.sh -m atac -g mm10 -a \
-  --normalize none \
-  /path/to/atac_count_outputs
+./cellranger.sh -m atac -g mm10 -a --normalize none /path/to/atac_count_outputs
 ```
 
 ### Output and restart behavior
